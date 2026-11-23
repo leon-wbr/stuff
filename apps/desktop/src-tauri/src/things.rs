@@ -109,6 +109,17 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    /// `STUFF_THINGS_DB=/path/main.sqlite cargo test -- --ignored`: row counts of a real backup.
+    #[test]
+    #[ignore = "reads a real Things backup named by STUFF_THINGS_DB"]
+    fn reads_a_real_backup() {
+        let path = std::env::var("STUFF_THINGS_DB").expect("set STUFF_THINGS_DB");
+        let data = read(Path::new(&path)).unwrap();
+        for name in TABLES {
+            println!("{name}: {} rows", data[name].as_array().unwrap().len());
+        }
+    }
+
     #[test]
     fn refuses_files_that_are_not_things_databases() {
         let dir = std::env::temp_dir().join(format!("stuff-notthings-{}", std::process::id()));

@@ -15,14 +15,23 @@ import { useChange } from "./app.ts";
 import { dayLabel, deadlineLabel, stoppedLabel } from "./format.ts";
 import { ProgressRing } from "./icons.tsx";
 
-export function Checkbox({ task, onToggle }: { task: Task; onToggle(): void }) {
+export function Checkbox({
+  task,
+  onToggle,
+  disabled,
+}: {
+  task: Task;
+  onToggle(): void;
+  disabled?: boolean;
+}) {
   const done = task.status !== "open";
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={done}
-      aria-label={done ? "Mark as open" : "Complete"}
+      aria-label={disabled ? "Repeats on this date" : done ? "Mark as open" : "Complete"}
+      disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
         onToggle();
@@ -106,7 +115,11 @@ export function Row({
           <ProgressRing {...progress(w, task.id)} status={task.status} />
         </button>
       ) : (
-        <Checkbox task={task} onToggle={() => change(setStatus([task.id], "completed"))} />
+        <Checkbox
+          task={task}
+          disabled={task.type === "todo" && !!task.repeat}
+          onToggle={() => change(setStatus([task.id], "completed"))}
+        />
       )}
       {context === "logbook" && task.stopped && (
         <span className="w-12 shrink-0 text-xs text-muted-foreground">
@@ -133,7 +146,7 @@ export function Row({
       >
         {task.title || (task.type === "project" ? "New Project" : "New To-Do")}
       </span>
-      {task.type === "todo" && task.template && (
+      {task.type === "todo" && (task.template || task.repeat) && (
         <ArrowsClockwiseIcon
           className="size-3 shrink-0 text-muted-foreground"
           aria-label="Repeating"

@@ -110,7 +110,7 @@ function ThingsImport() {
               setMessage("Imported.");
             }}
           >
-            Import
+            Import into stuff
           </Button>
         )}
       </div>

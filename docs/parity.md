@@ -1,36 +1,38 @@
 # Parity checklist
 
-Status: ✅ done, 🟡 partial, ⬜ not yet.
+Status: ✅ done, 🟡 partial, ⬜ not yet. "Checked" means covered by core tests or the headless UI run (synthetic data); "native" means it needs a check in the built app.
 
-| Feature                             | Status | Notes |
-| ----------------------------------- | ------ | ----- |
-| Inbox                               | ⬜     |       |
-| Today + This Evening                | ⬜     |       |
-| Upcoming (by day)                   | ⬜     |       |
-| Anytime                             | ⬜     |       |
-| Someday                             | ⬜     |       |
-| Logbook                             | ⬜     |       |
-| Trash (put back, empty)             | ⬜     |       |
-| Areas                               | ⬜     |       |
-| Projects: notes, deadline, progress | ⬜     |       |
-| Project headings                    | ⬜     |       |
-| Complete / cancel project           | ⬜     |       |
-| To-do notes (Markdown)              | ⬜     |       |
-| Checklists                          | ⬜     |       |
-| Tags (nested), tag filter           | ⬜     |       |
-| When date vs deadline               | ⬜     |       |
-| Reminders (local notifications)     | ⬜     |       |
-| Repeating: after completion         | ⬜     |       |
-| Repeating: fixed schedule           | ⬜     |       |
-| Drag to reorder                     | ⬜     |       |
-| Drag to move between lists          | ⬜     |       |
-| Quick Entry (global hotkey)         | ⬜     |       |
-| Quick Find / Type Travel            | ⬜     |       |
-| Magic Plus-style insertion          | ⬜     |       |
-| Keyboard shortcuts                  | ⬜     |       |
-| Multiple windows                    | ⬜     |       |
-| Light / dark                        | ⬜     |       |
-| Things import                       | ⬜     |       |
-| Hand-off to Things (URL)            | ⬜     |       |
-| JSON backup export / import         | ⬜     |       |
-| Nostr sync (encrypted)              | ⬜     |       |
+| Feature                                                        | Status | Notes                                                                                                                                                       |
+| -------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inbox                                                          | ✅     |                                                                                                                                                             |
+| Today + This Evening                                           | ✅     | Includes overdue and deadline-due items; finished items stay until the next day                                                                             |
+| Upcoming (by day)                                              | ✅     | Days for the next week, then months; repeating templates show their next date                                                                               |
+| Anytime                                                        | ✅     | Grouped: loose, projects, areas                                                                                                                             |
+| Someday                                                        | ✅     |                                                                                                                                                             |
+| Logbook                                                        | ✅     | Newest first; to-dos of a finished project fold into it                                                                                                     |
+| Trash (put back, empty)                                        | ✅     | Emptying tombstones children too                                                                                                                            |
+| Areas                                                          | ✅     |                                                                                                                                                             |
+| Projects: notes, deadline, progress                            | ✅     | Progress ring in sidebar and rows                                                                                                                           |
+| Project headings                                               | ✅     | Add, rename, archive, delete; drop into a heading moves there                                                                                               |
+| Complete / cancel project                                      | ✅     | Completes or cancels its open to-dos                                                                                                                        |
+| To-do notes (Markdown)                                         | ✅     | marked + DOMPurify; edit on click                                                                                                                           |
+| Checklists                                                     | ✅     | Enter adds the next item, Backspace on empty removes                                                                                                        |
+| Tags (nested), tag filter                                      | ✅     | Tag view includes child tags; tag shortcuts (Things' per-tag keys) not wired                                                                                |
+| When date vs deadline                                          | ✅     |                                                                                                                                                             |
+| Reminders (local notifications)                                | 🟡     | Due-time logic tested; notification delivery is native, not yet seen in the built app                                                                       |
+| Repeating: after completion                                    | ✅     | Hidden template, next date set on completion                                                                                                                |
+| Repeating: fixed schedule                                      | ✅     | Instances created on their day, ids derived so two Macs don't duplicate; editing the rule from an instance only (no template editor)                        |
+| Drag to reorder                                                | ✅     | One fractional index written per move; Today orders by its own index                                                                                        |
+| Drag to move between lists                                     | ✅     | Onto sidebar lists, projects, areas, Logbook (complete), Trash                                                                                              |
+| Quick Entry (global hotkey)                                    | 🟡     | Window and save checked headless; Ctrl+Space registration is native, not yet seen                                                                           |
+| Quick Find / Type Travel                                       | ✅     | Lists, areas, projects, tags, to-dos (title and notes)                                                                                                      |
+| Magic Plus-style insertion                                     | ✅     | Click adds after the selection; drag the + to drop a new to-do at a position                                                                                |
+| Keyboard shortcuts                                             | ✅     | ⌘N, Space, ⌥⌘N, ⇧⌘N, ⌘K, ⌥⌘K, ⌘T, ⌘E, ⌘R, ⌘O, ⌘S, ⇧⌘D, ⇧⌘M (move, as in Things), ⇧⌘T, ⇧⌘C (checklist), ⌘D, ⌘F, ⌘1–7, ⌘↑/↓, arrows, Delete. No undo (⌘Z) yet |
+| Multiple windows                                               | 🟡     | ⌃⌘N opens another main window sharing the store (store-changed to all windows); native only, not yet seen                                                   |
+| Light / dark                                                   | ✅     | System, light or dark (synced setting)                                                                                                                      |
+| Things import                                                  | ✅     | Checked against a real backup by counts                                                                                                                     |
+| Hand-off to Things (URL)                                       | ✅     | things:///json for to-dos and whole projects (headings, checklists, tags)                                                                                   |
+| JSON backup export / import                                    | ✅     | Restore merges, never overwrites newer edits                                                                                                                |
+| Nostr sync (encrypted)                                         | ✅     | Checked with two instances through a local relay                                                                                                            |
+| Undo / redo                                                    | ⬜     |                                                                                                                                                             |
+| Contacts, calendar events in Today, widgets, Shortcuts actions | ⬜     | Out of scope for now                                                                                                                                        |

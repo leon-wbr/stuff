@@ -34,6 +34,7 @@ function Item({
   return (
     <button
       type="button"
+      data-kind={view.split(":")[0]}
       aria-current={current === view ? "page" : undefined}
       onClick={() => {
         localStorage.setItem(`view:${windowLabel}`, view);

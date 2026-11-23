@@ -68,6 +68,19 @@ mod tests {
         assert!(open(&keys, &tampered).is_err());
     }
 
+    /// Sealed by nostr-tools (the webview's library) with a throwaway test key.
+    #[test]
+    fn opens_events_sealed_by_nostr_tools() {
+        let keys =
+            Keys::parse("7f4c11a9742721d66e40e321ca50b682c27f7422190c14a187525e69e604836a")
+                .unwrap();
+        let event: Event = serde_json::from_str(r#"{"kind":30078,"created_at":1790000000,"tags":[["d","abc123"],["t","stuff"]],"content":"AlO3/3g3Nx7j1XAvGUldsEjdUas4gttDqI04+UZe/nesuInSfsvfM+bGRzd8fFYL7FmD1ZsABq6UiQWzurCCY7AcN56ORxO1ZXaZ8wgcBvVbNud7Nh3Vq3pJ3U3eirzeJeoSFbiBUWZdvjYQ2rzJNRdPAc0+nOXbZniObccLXaBQbbz/AmlZuarpWdU7tJkwQ8PrxlE1Dj0HJ9Mu5VAP2dWDRw==","pubkey":"7cef86754ddf07395c289c30fe31219de938c6d707d6b478a8682fc75795e8b9","id":"3d602f19499c7c840ede475e21ff0de94b855c1d25acc88088566f7865cf45f6","sig":"36e368ab00b0891148b0c9958c7d3ee8f9a3110842d11db77a1e989697f5cee616401810816ef11353831250c61c2955e5de11528cfc2f55ff949cd9aeb5d827"}"#).unwrap();
+        assert_eq!(
+            open(&keys, &event).unwrap(),
+            r#"{"id":"abc123","type":"todo","f":{"title":{"v":"From TS","c":"1"}}}"#
+        );
+    }
+
     #[test]
     fn refuses_ids_that_could_smuggle_tags() {
         let keys = Keys::generate();
