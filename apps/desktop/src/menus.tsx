@@ -401,9 +401,7 @@ export function TargetMenu({
       />
     ) : null;
   return (
-    <ContextMenuContent className="min-w-56 rounded-xl p-1 text-ui">
-      {content}
-    </ContextMenuContent>
+    <ContextMenuContent className="min-w-56 rounded-xl p-1 text-ui">{content}</ContextMenuContent>
   );
 }
 
