@@ -19,5 +19,5 @@ Next:
 
 - Check natively in the built `stuff.app`: Ctrl+Space Quick Entry, ⌃⌘N second window, reminder notifications, keychain prompt with the "Stuff Local Dev" identity (`scripts/local-signing-identity.sh`, not yet run on this Mac).
 - Sync status shows "Synced" after a flush with nothing to publish even when no relay is reachable; report relay connectivity instead.
-- Undo/redo; editing a repeating rule's template directly; per-tag keyboard shortcuts.
+- Per-tag keyboard shortcuts.
 - The sync check drives two webview instances with nostr-tools standing in for `vault.rs`; a native two-app run (`STUFF_PROFILE=a` / `b`, `open -n`) is still to do.

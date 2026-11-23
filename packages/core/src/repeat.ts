@@ -67,16 +67,47 @@ export const makeRepeating =
     ];
   };
 
+const instancesOf = (ctx: Ctx, templateId: Id) =>
+  [...ctx.docs.values()].filter(
+    (d) => !d.deleted && d.type === "todo" && materialize<Todo>(d).template === templateId,
+  );
+
+/** Stops a repeating to-do, given its template or an instance: removes the template and unlinks its instances. */
 export const stopRepeating =
   (id: Id): Op =>
   (ctx) => {
-    const doc = ctx.docs.get(id)!;
-    const templateId = materialize<Todo>(doc).template;
+    const todo = materialize<Todo>(ctx.docs.get(id)!);
+    const templateId = todo.repeat ? id : todo.template;
     const template = templateId ? ctx.docs.get(templateId) : undefined;
+    const linked = templateId ? instancesOf(ctx, templateId) : [ctx.docs.get(id)!];
     return [
-      update(doc, { template: null }, ctx.clock),
+      ...linked.map((d) => update(d, { template: null }, ctx.clock)),
       ...(template ? [remove(template, ctx.clock)] : []),
     ];
+  };
+
+/**
+ * Sets the rule of a repeating to-do, given its template or an instance, by editing the template in
+ * place; a plain to-do starts repeating. A fixed schedule continues from the latest instance's
+ * date; after completion waits for the open instance to be done.
+ */
+export const setRepeat =
+  (id: Id, repeat: Repeat): Op =>
+  (ctx) => {
+    const todo = materialize<Todo>(ctx.docs.get(id)!);
+    const templateId = todo.repeat ? id : todo.template;
+    const template = templateId ? ctx.docs.get(templateId) : undefined;
+    if (!templateId || !template || template.deleted) return makeRepeating(id, repeat)(ctx);
+    const instances = instancesOf(ctx, templateId).map((d) => materialize<Todo>(d));
+    const latest = instances.reduce<Day>((max, t) => (t.when && t.when > max ? t.when : max), "");
+    const waiting = instances.some((t) => t.status === "open" && !t.trashed);
+    const next =
+      repeat.mode === "schedule"
+        ? advance(latest || ctx.today, repeat)
+        : waiting
+          ? null
+          : advance(ctx.today, repeat);
+    return [update(template, { repeat, next }, ctx.clock)];
   };
 
 /** Creates the instances whose day has come and moves each template's next date on. */

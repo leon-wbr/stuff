@@ -7,7 +7,10 @@ import {
   MoonIcon,
   PlusIcon,
   ShareIcon,
+  SidebarSimpleIcon,
 } from "@phosphor-icons/react";
+import { shortcutLabel } from "@stuff/core/keys";
+import { chain } from "@stuff/core/actions";
 import { toDate } from "@stuff/core/days";
 import { list, progress, withTag, type Section, type Task, type World } from "@stuff/core/lists";
 import type { View } from "@stuff/core/machine";
@@ -26,12 +29,14 @@ import {
 } from "@stuff/core/ops";
 import { BUILT_IN } from "@stuff/core/search";
 import { Button } from "@stuff/ui/components/button";
+import { ContextMenu, ContextMenuTrigger } from "@stuff/ui/components/context-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@stuff/ui/components/popover";
 import { useMemo, useState, type ReactNode } from "react";
 import { Stuff, useChange, useWorld } from "./app.ts";
 import { Editor, Notes } from "./Editor.tsx";
 import { dayLabel, monthLabel } from "./format.ts";
 import { ProgressRing, ViewIcon } from "./icons.tsx";
+import { TargetMenu, type Target } from "./menus.tsx";
 import { Row } from "./Row.tsx";
 import { sendToThings } from "./things.ts";
 import { usePanel } from "./ui.tsx";
@@ -96,7 +101,10 @@ function SectionHeader({ section, view, today }: { section: Section; view: View;
   if (!section.title) return null;
   const heading = view.startsWith("project:") && section.ref;
   return (
-    <div className="mt-6 mb-1 flex items-center gap-2 border-b pb-1">
+    <div
+      data-heading={heading || undefined}
+      className="mt-6 mb-1 flex items-center gap-2 border-b pb-1"
+    >
       {heading ? (
         <input
           defaultValue={section.title}
@@ -265,11 +273,12 @@ export function ListView() {
   const w = useWorld();
   const { send } = Stuff.useActorRef();
   const change = useChange();
-  const { open } = usePanel();
+  const { open, sidebar, toggleSidebar } = usePanel();
   const { view, today, selection, editing } = Stuff.useSelector((s) => s.context);
   const sections = useMemo(() => sectionsFor(w, view, today), [w, view, today]);
   const order = useMemo(() => sections.flatMap((s) => s.items.map((t) => t.id)), [sections]);
   const [drop, setDrop] = useState<{ section: string; at: number } | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
   const field = view === "today" ? "todayIndex" : "index";
   const context =
     view === "today"
@@ -284,6 +293,7 @@ export function ListView() {
 
   const select = (id: Id, e: React.MouseEvent) => {
     if (editing === id) return;
+    if ((e.button === 2 || e.ctrlKey) && selection.includes(id)) return;
     if (editing) send({ type: "edit", id: null });
     if (e.metaKey)
       send({
@@ -317,15 +327,7 @@ export function ListView() {
       ops.push(moveTo(ids, whereFor(view, section, today, w)));
     const { before, after } = dropAt(sectionOrder, ids, at);
     ops.push(reorder(ids, before, after, field));
-    change((ctx) => {
-      const out = [];
-      for (const op of ops) {
-        const docs = op(ctx);
-        for (const d of docs) ctx.docs.set(d.id, d);
-        out.push(...docs);
-      }
-      return out;
-    });
+    change(chain(...ops));
   };
 
   const dragOver = (e: React.DragEvent, section: string, at: number) => {
@@ -342,71 +344,100 @@ export function ListView() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div data-tauri-drag-region className="h-10 shrink-0" />
+      <div
+        data-tauri-drag-region
+        className={`flex h-10 shrink-0 items-center ${sidebar ? "pl-2" : "pl-20"}`}
+      >
+        <button
+          type="button"
+          aria-label={sidebar ? "Hide Sidebar" : "Show Sidebar"}
+          aria-pressed={sidebar}
+          title={`${sidebar ? "Hide" : "Show"} Sidebar (${shortcutLabel("toggleSidebar")})`}
+          onClick={toggleSidebar}
+          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <SidebarSimpleIcon className="size-[18px]" />
+        </button>
+      </div>
       <div
         className="min-h-0 flex-1 overflow-y-auto pb-24"
         onMouseDown={(e) => e.target === e.currentTarget && send({ type: "select", ids: [] })}
       >
         <Header view={view} w={w} today={today} />
         {!order.length && !view.startsWith("project:") && <Empty view={view} />}
-        <div
-          role="listbox"
-          aria-multiselectable
-          aria-label={viewTitle(w, view)}
-          className="px-8"
-          onDragLeave={(e) => e.currentTarget === e.target && setDrop(null)}
-        >
-          {sections.map((section) => (
-            <section
-              key={section.key}
-              onDragOver={(e) =>
-                e.target === e.currentTarget && dragOver(e, section.key, section.items.length)
-              }
-              onDrop={(e) =>
-                onDrop(e, section, drop?.section === section.key ? drop.at : section.items.length)
-              }
-              className="pb-1"
-            >
-              <SectionHeader section={section} view={view} today={today} />
-              {section.items.map((task: Task, i) => (
-                <div
-                  key={task.id}
-                  onDragOver={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    dragOver(e, section.key, e.clientY < rect.top + rect.height / 2 ? i : i + 1);
-                  }}
-                  onDrop={(e) => onDrop(e, section, drop?.at ?? i)}
-                >
-                  {indicator(section.key, i)}
-                  {editing === task.id ? (
-                    <Editor task={task} w={w} today={today} />
-                  ) : (
-                    <Row
-                      task={task}
-                      w={w}
-                      today={today}
-                      context={context}
-                      selected={selection.includes(task.id)}
-                      onSelect={(e) => select(task.id, e)}
-                      onOpen={() =>
-                        task.type === "project" && view !== `project:${task.id}`
-                          ? send({ type: "view", view: `project:${task.id}` })
-                          : send({ type: "edit", id: task.id })
-                      }
-                      onDragStart={(e) => {
-                        const ids = selection.includes(task.id) ? selection : [task.id];
-                        e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(ids));
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                    />
-                  )}
-                  {i === section.items.length - 1 && indicator(section.key, i + 1)}
-                </div>
-              ))}
-              {!section.items.length && indicator(section.key, 0)}
-            </section>
-          ))}
-        </div>
+        <ContextMenu>
+          <ContextMenuTrigger
+            role="listbox"
+            aria-multiselectable
+            aria-label={viewTitle(w, view)}
+            className="min-h-40 px-8"
+            onDragLeave={(e) => e.currentTarget === e.target && setDrop(null)}
+            onContextMenu={(e) => {
+              const el = e.target as HTMLElement;
+              if (el.closest("[data-id]:not([role=option])")) return e.preventBaseUIHandler();
+              const row = el.closest<HTMLElement>("[role=option]")?.dataset.id;
+              const heading = el.closest<HTMLElement>("[data-heading]")?.dataset.heading;
+              if (row) {
+                const ids = selection.includes(row) ? selection : [row];
+                if (!selection.includes(row)) send({ type: "select", ids });
+                setTarget({ kind: "tasks", ids });
+              } else if (heading) setTarget({ kind: "heading", id: heading });
+              else setTarget({ kind: "view", view });
+            }}
+          >
+            {sections.map((section) => (
+              <section
+                key={section.key}
+                onDragOver={(e) =>
+                  e.target === e.currentTarget && dragOver(e, section.key, section.items.length)
+                }
+                onDrop={(e) =>
+                  onDrop(e, section, drop?.section === section.key ? drop.at : section.items.length)
+                }
+                className="pb-1"
+              >
+                <SectionHeader section={section} view={view} today={today} />
+                {section.items.map((task: Task, i) => (
+                  <div
+                    key={task.id}
+                    onDragOver={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      dragOver(e, section.key, e.clientY < rect.top + rect.height / 2 ? i : i + 1);
+                    }}
+                    onDrop={(e) => onDrop(e, section, drop?.at ?? i)}
+                  >
+                    {indicator(section.key, i)}
+                    {editing === task.id ? (
+                      <Editor task={task} w={w} today={today} />
+                    ) : (
+                      <Row
+                        task={task}
+                        w={w}
+                        today={today}
+                        context={context}
+                        selected={selection.includes(task.id)}
+                        onSelect={(e) => select(task.id, e)}
+                        onOpen={() =>
+                          task.type === "project" && view !== `project:${task.id}`
+                            ? send({ type: "view", view: `project:${task.id}` })
+                            : send({ type: "edit", id: task.id })
+                        }
+                        onDragStart={(e) => {
+                          const ids = selection.includes(task.id) ? selection : [task.id];
+                          e.dataTransfer.setData(DRAG_TYPE, JSON.stringify(ids));
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                      />
+                    )}
+                    {i === section.items.length - 1 && indicator(section.key, i + 1)}
+                  </div>
+                ))}
+                {!section.items.length && indicator(section.key, 0)}
+              </section>
+            ))}
+          </ContextMenuTrigger>
+          <TargetMenu target={target} />
+        </ContextMenu>
       </div>
       <Toolbar
         onAdd={() => {

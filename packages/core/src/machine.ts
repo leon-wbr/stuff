@@ -6,6 +6,7 @@ import type { ListId } from "./lists";
 import type { Day, Id } from "./model";
 import { randomId, type Ctx, type Op } from "./ops";
 import { spawnDue } from "./repeat";
+import { record, revert, type Entry } from "./undo";
 
 export interface Deps {
   keyStatus(): Promise<string | null>;
@@ -30,6 +31,9 @@ export interface Context {
   view: View;
   selection: Id[];
   editing: Id | null;
+  /** This window's edits, newest last. Only local edits; sync and other windows don't add to it. */
+  undo: Entry[];
+  redo: Entry[];
 }
 
 export type Event =
@@ -40,6 +44,8 @@ export type Event =
   | { type: "view"; view: View }
   | { type: "select"; ids: Id[] }
   | { type: "edit"; id: Id | null }
+  | { type: "undo" }
+  | { type: "redo" }
   | { type: "tick" };
 
 export const editCtx = (c: Pick<Context, "docs" | "clock" | "today" | "now">): Ctx => ({
@@ -55,6 +61,8 @@ const applied = (docs: Map<Id, Doc>, changed: Doc[]) => {
   for (const d of changed) next.set(d.id, d);
   return next;
 };
+
+const HISTORY = 100;
 
 type KeyCommand = { command: "generate_key" | "import_key"; nsec?: string };
 
@@ -86,13 +94,30 @@ export function appMachine(deps: Deps, view: View = "today") {
       }),
       apply: assign(({ context }, op: Op) => {
         try {
-          const changed = op(editCtx(context));
+          const changed = op({ ...editCtx(context), docs: new Map(context.docs) });
           if (!changed.length) return {};
           deps.save(changed, true).catch((e) => console.error("save failed", e));
-          return { docs: applied(context.docs, changed), error: undefined };
+          return {
+            docs: applied(context.docs, changed),
+            undo: [...context.undo, record(context.docs, changed)].slice(-HISTORY),
+            redo: [],
+            error: undefined,
+          };
         } catch (e) {
           return { error: e instanceof Error ? e.message : String(e) };
         }
+      }),
+      step: assign(({ context }, from: "undo" | "redo") => {
+        const to = from === "undo" ? "redo" : "undo";
+        const entry = context[from].at(-1);
+        if (!entry) return {};
+        const changed = revert(entry)(editCtx(context));
+        if (changed.length) deps.save(changed, true).catch((e) => console.error("save failed", e));
+        return {
+          docs: applied(context.docs, changed),
+          [from]: context[from].slice(0, -1),
+          [to]: [...context[to], record(context.docs, changed)],
+        };
       }),
       spawnRepeats: assign(({ context }) => {
         const changed = spawnDue(editCtx(context));
@@ -112,6 +137,8 @@ export function appMachine(deps: Deps, view: View = "today") {
       view,
       selection: [],
       editing: null,
+      undo: [],
+      redo: [],
     },
     on: {
       view: { actions: assign({ view: ({ event }) => event.view, selection: [], editing: null }) },
@@ -211,6 +238,8 @@ export function appMachine(deps: Deps, view: View = "today") {
                   },
                 }),
               },
+              undo: { actions: { type: "step", params: "undo" as const } },
+              redo: { actions: { type: "step", params: "redo" as const } },
               tick: { actions: [assign({ today }), "spawnRepeats"] },
             },
           },
