@@ -33,6 +33,10 @@
     "allow-things-read",
     "allow-text-read",
     "allow-text-write",
+    "allow-folder-list",
+    "allow-folder-stat",
+    "allow-folder-read",
+    "allow-folder-write",
     "allow-new-window",
     "allow-quick-entry"
   ]

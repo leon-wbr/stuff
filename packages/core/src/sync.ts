@@ -1,34 +1,35 @@
-import type { Filter } from "nostr-tools/filter";
-import type { Event } from "nostr-tools/pure";
-import { equal, merge, parseDoc, type Doc } from "./doc";
+import { equal, merge, type Doc } from "./doc";
 import type { Clock } from "./hlc";
 import type { Id } from "./model";
 
-export const KIND = 30078;
-export const APP_TAG = "stuff";
-/** Re-read this far behind the last sync, for events that reached a relay late. */
-const OVERLAP = 600;
+/** Where documents are synced to. See docs/extensibility.md. */
+export interface SyncAdapter {
+  /** Stable per remote (`nostr:<pubkey>`, `folder:<path>`); the engine keeps one cursor per key. */
+  key: string;
+  /** Reads everything after `cursor`, calls `ready` once caught up, then delivers changes until stopped. */
+  watch(cursor: string | null, on: WatchHandlers): () => void;
+  /** Stores one document remotely. */
+  push(doc: Doc): Promise<void>;
+  /** Throws with a readable message when the remote can't be reached right now. */
+  check(): Promise<void>;
+}
 
-export interface Relays {
-  subscribe(filter: Filter, onEvent: (e: Event) => void, onEose: () => void): () => void;
-  publish(event: Event): Promise<void>;
+export interface WatchHandlers {
+  changes(docs: Doc[], cursor: string): Promise<void>;
+  ready(): void;
+  error(e: unknown): void;
 }
 
 export interface SyncDeps {
-  pubkey: string;
-  relays: Relays;
-  /** Encrypts to self and signs, in Rust. */
-  seal(id: Id, plaintext: string, createdAt: number): Promise<Event>;
-  /** Verifies and decrypts, in Rust. */
-  open(event: Event): Promise<string>;
+  adapter: SyncAdapter;
   dirty(): Promise<{ doc: Doc; rev: number }[]>;
   clean(published: { id: Id; rev: number }[]): Promise<void>;
   save(docs: Doc[], dirty: boolean): Promise<void>;
   current(id: Id): Doc | undefined;
+  all(): Iterable<Doc>;
   getMeta(key: string): Promise<string | null>;
   setMeta(key: string, value: string): Promise<void>;
   clock?: Clock;
-  now?(): number;
   onStatus?(status: SyncStatus): void;
 }
 
@@ -37,46 +38,36 @@ export type SyncStatus =
   | { state: "synced"; at: number }
   | { state: "error"; error: string };
 
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
 export function createSync(deps: SyncDeps) {
-  const now = () => Math.floor((deps.now?.() ?? Date.now()) / 1000);
-  /** Newest created_at seen per object, so our replacement is always newer than the relay's copy. */
-  const seen = new Map<Id, number>();
-  let lastSync = 0;
-  let close: (() => void) | undefined;
+  const { adapter } = deps;
+  const cursorKey = `cursor:${adapter.key}`;
+  let stop: (() => void) | undefined;
   let flushing: Promise<void> | undefined;
   let again = false;
+  /** Received batches are merged one after another, in arrival order. */
+  let received = Promise.resolve();
 
-  async function receive(event: Event) {
-    const d = event.tags.find((t) => t[0] === "d")?.[1];
-    if (event.kind !== KIND || event.pubkey !== deps.pubkey || !d) return;
-    seen.set(d, Math.max(seen.get(d) ?? 0, event.created_at));
-    let remote: Doc | undefined;
-    try {
-      remote = parseDoc(JSON.parse(await deps.open(event)));
-    } catch {
-      return;
+  async function receive(docs: Doc[], cursor: string) {
+    for (const remote of docs) {
+      const local = deps.current(remote.id);
+      const merged = merge(local, remote, deps.clock);
+      const newer = !equal(merged, remote);
+      if (local && equal(local, merged)) {
+        if (newer) await deps.save([merged], true);
+      } else await deps.save([merged], newer);
     }
-    if (!remote || remote.id !== d) return;
-    const local = deps.current(d);
-    const merged = merge(local, remote, deps.clock);
-    const newer = !equal(merged, remote);
-    if (local && equal(local, merged)) {
-      if (newer) await deps.save([merged], true);
-    } else await deps.save([merged], newer);
-    if (event.created_at > lastSync) lastSync = event.created_at;
+    await deps.setMeta(cursorKey, cursor);
   }
 
-  async function publishDirty() {
-    const dirty = await deps.dirty();
+  async function push(docs: { doc: Doc; rev?: number }[]) {
     const published: { id: Id; rev: number }[] = [];
     let failed: unknown;
-    for (const { doc, rev } of dirty) {
-      const createdAt = Math.max(now(), (seen.get(doc.id) ?? 0) + 1);
+    for (const { doc, rev } of docs) {
       try {
-        const event = await deps.seal(doc.id, JSON.stringify(doc), createdAt);
-        await deps.relays.publish(event);
-        seen.set(doc.id, createdAt);
-        published.push({ id: doc.id, rev });
+        await adapter.push(doc);
+        if (rev !== undefined) published.push({ id: doc.id, rev });
       } catch (e) {
         failed = e;
       }
@@ -85,7 +76,7 @@ export function createSync(deps: SyncDeps) {
     if (failed) throw failed;
   }
 
-  /** Publishes dirty objects; calls made while one runs are coalesced into one more run. */
+  /** Pushes dirty documents; calls made while one runs are coalesced into one more run. */
   function flush(): Promise<void> {
     if (flushing) {
       again = true;
@@ -95,11 +86,12 @@ export function createSync(deps: SyncDeps) {
       try {
         do {
           again = false;
-          await publishDirty();
+          await push(await deps.dirty());
         } while (again);
+        await adapter.check();
         deps.onStatus?.({ state: "synced", at: Date.now() });
       } catch (e) {
-        deps.onStatus?.({ state: "error", error: e instanceof Error ? e.message : String(e) });
+        deps.onStatus?.({ state: "error", error: message(e) });
       } finally {
         flushing = undefined;
       }
@@ -109,36 +101,28 @@ export function createSync(deps: SyncDeps) {
 
   async function start() {
     deps.onStatus?.({ state: "connecting" });
-    lastSync = Number((await deps.getMeta("lastSync")) ?? 0);
-    const queue: Event[] = [];
-    let draining: Promise<void> | undefined;
-    const drain = async () => {
-      while (queue.length) await receive(queue.shift()!);
-      await deps.setMeta("lastSync", String(lastSync));
-      draining = undefined;
-    };
+    const cursor = await deps.getMeta(cursorKey);
     await new Promise<void>((resolve) => {
-      close = deps.relays.subscribe(
-        {
-          kinds: [KIND],
-          authors: [deps.pubkey],
-          "#t": [APP_TAG],
-          ...(lastSync && { since: lastSync - OVERLAP }),
-        },
-        (event) => {
-          queue.push(event);
-          draining ??= drain();
-        },
-        () => void (draining ?? Promise.resolve()).then(resolve),
-      );
+      stop = adapter.watch(cursor, {
+        changes: (docs, next) => (received = received.then(() => receive(docs, next))),
+        ready: () => void received.then(resolve),
+        error: (e) => deps.onStatus?.({ state: "error", error: message(e) }),
+      });
     });
-    await draining;
+    if (cursor === null) {
+      try {
+        await push([...deps.all()].map((doc) => ({ doc })));
+        if ((await deps.getMeta(cursorKey)) === null) await deps.setMeta(cursorKey, "");
+      } catch {
+        // Retried on the next start, since no cursor was stored.
+      }
+    }
     await flush();
   }
 
   return {
     start,
     flush,
-    stop: () => close?.(),
+    stop: () => stop?.(),
   };
 }

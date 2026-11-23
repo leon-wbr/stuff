@@ -1,8 +1,8 @@
 import { TrashIcon } from "@phosphor-icons/react";
-import { backupJson, restoreBackup } from "@stuff/core/backup";
+import { stuff } from "@stuff/core/extensions";
 import { DEFAULT_RELAYS, normalizeRelay } from "@stuff/core/relays";
 import { saveSettings } from "@stuff/core/ops";
-import { importThings, thingsCounts, type ThingsData } from "@stuff/core/things";
+import { thingsCounts, type ThingsData } from "@stuff/core/things";
 import { Button } from "@stuff/ui/components/button";
 import { Input } from "@stuff/ui/components/input";
 import { Switch } from "@stuff/ui/components/switch";
@@ -10,19 +10,88 @@ import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { Stuff, useChange, useWorld } from "./app.ts";
-import { Section } from "./Settings.tsx";
-import { useSyncStatus } from "./sync.ts";
+import { KeySetup, Section } from "./Settings.tsx";
+import { setSyncConfig, useSyncConfig, useSyncStatus } from "./sync.ts";
+
+const MODES = [
+  { id: "off", title: "Off" },
+  { id: "nostr", title: "Nostr" },
+  { id: "folder", title: "Folder…" },
+] as const;
+
+function Sync() {
+  const config = useSyncConfig();
+  const status = useSyncStatus();
+  if (!config) return null;
+  const pickFolder = async (encrypt = config.encrypt ?? false) => {
+    const path = await open({ directory: true, title: "Sync through this folder" });
+    if (typeof path === "string") await setSyncConfig({ adapter: "folder", path, encrypt });
+  };
+  return (
+    <Section title="Sync">
+      <div className="flex gap-1.5" role="radiogroup" aria-label="Sync">
+        {MODES.map((m) => (
+          <Button
+            key={m.id}
+            size="sm"
+            role="radio"
+            aria-checked={config.adapter === m.id}
+            variant={config.adapter === m.id ? "default" : "secondary"}
+            onClick={() =>
+              m.id === "folder" ? void pickFolder() : void setSyncConfig({ adapter: m.id })
+            }
+          >
+            {m.title}
+          </Button>
+        ))}
+      </div>
+      {config.adapter === "off" && (
+        <p className="text-[13px] text-muted-foreground">
+          Everything stays on this Mac. Choose Nostr or a folder (in iCloud Drive, Google Drive,
+          Dropbox or a Syncthing share) to use stuff on several Macs.
+        </p>
+      )}
+      {config.adapter === "nostr" && (
+        <>
+          <KeySetup />
+          <Relays />
+        </>
+      )}
+      {config.adapter === "folder" && (
+        <>
+          <p className="text-[13px] text-muted-foreground">
+            Each item is one file in{" "}
+            <span className="selectable font-mono text-xs break-all">{config.path}</span>. Point
+            your other Macs at the same folder.
+          </p>
+          <div className="flex items-center gap-2 text-[13px]">
+            <Switch
+              checked={!!config.encrypt}
+              onCheckedChange={(encrypt) => void setSyncConfig({ ...config, encrypt })}
+              aria-label="Encrypt with my key"
+            />
+            <span className="flex-1">Encrypt with my key</span>
+            <Button size="sm" variant="secondary" onClick={() => void pickFolder()}>
+              Change folder…
+            </Button>
+          </div>
+          {config.encrypt && <KeySetup />}
+        </>
+      )}
+      {config.adapter !== "off" && <p className="text-xs text-muted-foreground">{status.text}</p>}
+    </Section>
+  );
+}
 
 function Relays() {
   const w = useWorld();
   const change = useChange();
-  const sync = useSyncStatus();
   const relays = w.settings?.relays ?? DEFAULT_RELAYS;
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const save = (next: typeof relays) => change(saveSettings({ relays: next }));
   return (
-    <Section title="Sync">
+    <>
       <p className="text-[13px] text-muted-foreground">
         Each to-do, project and list is encrypted to your key and stored on these relays. They see
         when you change something and how many items you have, never what they say.
@@ -71,8 +140,7 @@ function Relays() {
         </Button>
       </form>
       {error && <p className="text-[13px] text-destructive">{error}</p>}
-      <p className="text-xs text-muted-foreground">{sync.text}</p>
-    </Section>
+    </>
   );
 }
 
@@ -105,7 +173,7 @@ function ThingsImport() {
         {data && (
           <Button
             onClick={() => {
-              change(importThings(data));
+              change(stuff.importers.get("things")!.op(data));
               setData(null);
               setMessage("Imported.");
             }}
@@ -140,7 +208,10 @@ function Backup() {
               filters: [{ name: "JSON", extensions: ["json"] }],
             });
             if (!path) return;
-            await invoke("text_write", { path, text: backupJson(docs.values()) });
+            await invoke("text_write", {
+              path,
+              text: stuff.exporters.get("json")!.run(docs.values()),
+            });
             setMessage(`Saved ${docs.size} items.`);
           }}
         >
@@ -152,7 +223,7 @@ function Backup() {
             const path = await open({ filters: [{ name: "JSON", extensions: ["json"] }] });
             if (typeof path !== "string") return;
             const text = await invoke<string>("text_read", { path });
-            change(restoreBackup(text));
+            change(stuff.importers.get("json")!.op(text));
             setMessage("Restored.");
           }}
         >
@@ -167,7 +238,7 @@ function Backup() {
 export function DataSettings() {
   return (
     <>
-      <Relays />
+      <Sync />
       <ThingsImport />
       <Backup />
     </>

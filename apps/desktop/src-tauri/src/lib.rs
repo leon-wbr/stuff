@@ -1,3 +1,4 @@
+mod folder;
 mod store;
 mod things;
 mod vault;
@@ -125,9 +126,45 @@ fn store_save(
     docs: Vec<Value>,
     dirty: bool,
 ) -> Result<(), String> {
-    store.save(&docs, dirty)?;
+    let docs = store.save(&docs, dirty)?;
     app.emit("store-changed", json!({ "docs": docs }))
         .map_err(|e| e.to_string())
+}
+
+/// Tells every window about documents another process (the `stuff` CLI) wrote to the store.
+fn watch_store(app: AppHandle) {
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            match app.state::<Store>().external_changes() {
+                Ok(docs) if !docs.is_empty() => {
+                    let _ = app.emit("store-changed", json!({ "docs": docs }));
+                }
+                Ok(_) => {}
+                Err(e) => eprintln!("store watch: {e}"),
+            }
+        }
+    });
+}
+
+#[tauri::command]
+fn folder_list(path: PathBuf) -> Result<Vec<folder::Entry>, String> {
+    folder::list(&path)
+}
+
+#[tauri::command]
+fn folder_stat(path: PathBuf, name: String) -> Result<Option<folder::Stat>, String> {
+    folder::stat(&path, &name)
+}
+
+#[tauri::command]
+fn folder_read(path: PathBuf, name: String) -> Result<String, String> {
+    folder::read(&path, &name)
+}
+
+#[tauri::command]
+fn folder_write(path: PathBuf, name: String, text: String) -> Result<folder::Stat, String> {
+    folder::write(&path, &name, &text)
 }
 
 #[tauri::command]
@@ -232,6 +269,7 @@ pub fn run() {
         .setup(move |app| {
             let path = data_dir(app.handle())?.join("stuff.sqlite");
             app.manage(Store::open(&path)?);
+            watch_store(app.handle().clone());
             if let Err(e) = app.global_shortcut().register(shortcut) {
                 eprintln!("Quick Entry shortcut unavailable: {e}");
             }
@@ -252,6 +290,10 @@ pub fn run() {
             things_read,
             text_read,
             text_write,
+            folder_list,
+            folder_stat,
+            folder_read,
+            folder_write,
             new_window,
             quick_entry
         ])

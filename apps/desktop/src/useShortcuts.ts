@@ -1,15 +1,7 @@
 import { commandFor, startsTypeTravel, type Command } from "@stuff/core/keys";
 import type { Task } from "@stuff/core/lists";
-import {
-  add,
-  dropAt,
-  moveTo,
-  reorder,
-  setStatus,
-  trash,
-  type Op,
-  type Where,
-} from "@stuff/core/ops";
+import { commandOp } from "@stuff/core/commands";
+import { add, dropAt, reorder, type Op, type Where } from "@stuff/core/ops";
 import { BUILT_IN } from "@stuff/core/search";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
@@ -85,12 +77,12 @@ export function useShortcuts() {
         newHeading: () =>
           view.startsWith("project:") && run(add("heading", { title: "", project: view.slice(8) })),
         newWindow: () => void invoke("new_window"),
-        complete: () => ids.length && run(setStatus(ids, "completed")),
-        cancel: () => ids.length && run(setStatus(ids, "canceled")),
-        today: () => ids.length && run(moveTo(ids, "today")),
-        evening: () => ids.length && run(moveTo(ids, "evening")),
-        anytime: () => ids.length && run(moveTo(ids, "anytime")),
-        someday: () => ids.length && run(moveTo(ids, "someday")),
+        complete: () => ids.length && run(commandOp("complete", { refs: ids, toggle: true })),
+        cancel: () => ids.length && run(commandOp("cancel", { refs: ids, toggle: true })),
+        today: () => ids.length && run(commandOp("move", { refs: ids, to: "today" })),
+        evening: () => ids.length && run(commandOp("move", { refs: ids, to: "evening" })),
+        anytime: () => ids.length && run(commandOp("move", { refs: ids, to: "anytime" })),
+        someday: () => ids.length && run(commandOp("move", { refs: ids, to: "someday" })),
         when: () => ids.length && open({ kind: "when", ids }),
         deadline: () => ids.length && open({ kind: "deadline", ids }),
         move: () => ids.length && open({ kind: "move", ids }),
@@ -104,7 +96,7 @@ export function useShortcuts() {
               return add(type, fields, undefined, id)(ctx);
             }),
           ),
-        trash: () => ids.length && view !== "trash" && run(trash(ids)),
+        trash: () => ids.length && view !== "trash" && run(commandOp("delete", { refs: ids })),
         open: () => ids[0] && actor.send({ type: "edit", id: ids[0] }),
         close: () =>
           editing
