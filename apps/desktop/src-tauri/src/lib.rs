@@ -6,7 +6,7 @@ mod vault;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicU32, Ordering};
 
 use nostr::prelude::{Event, Keys, ToBech32};
 use serde_json::{Value, json};
@@ -231,13 +231,45 @@ fn new_window(app: AppHandle) -> Result<(), String> {
     main_window(&app).map(|_| ())
 }
 
+/// The app that was frontmost when Quick Entry opened (0 = none, or stuff itself).
+static PREVIOUS_APP: AtomicI32 = AtomicI32::new(0);
+
+#[cfg(target_os = "macos")]
+fn remember_frontmost_app() {
+    use objc2_app_kit::{NSRunningApplication, NSWorkspace};
+    let ours = NSRunningApplication::currentApplication().processIdentifier();
+    let front = NSWorkspace::sharedWorkspace()
+        .frontmostApplication()
+        .map_or(0, |a| a.processIdentifier());
+    PREVIOUS_APP.store(if front == ours { 0 } else { front }, Ordering::Relaxed);
+}
+
+#[cfg(target_os = "macos")]
+fn restore_frontmost_app() {
+    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
+    let pid = PREVIOUS_APP.swap(0, Ordering::Relaxed);
+    if pid != 0 {
+        if let Some(app) = NSRunningApplication::runningApplicationWithProcessIdentifier(pid) {
+            app.activateWithOptions(NSApplicationActivationOptions::empty());
+        }
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn remember_frontmost_app() {}
+
+#[cfg(not(target_os = "macos"))]
+fn restore_frontmost_app() {}
+
 fn toggle_quick_entry(app: &AppHandle) {
     let Some(window) = app.get_webview_window("quick") else {
         return;
     };
     if window.is_visible().unwrap_or(false) {
         let _ = window.hide();
+        restore_frontmost_app();
     } else {
+        remember_frontmost_app();
         let _ = window.center();
         let _ = window.show();
         let _ = window.set_focus();
