@@ -6,7 +6,7 @@ import { QuickEntry } from "./QuickEntry.tsx";
 import { QuickFind } from "./QuickFind.tsx";
 import { SettingsDialog, useTheme } from "./Settings.tsx";
 import { Sidebar } from "./Sidebar.tsx";
-import { PanelProvider, PickerSheet } from "./ui.tsx";
+import { PanelProvider, PickerSheet, usePanel } from "./ui.tsx";
 import { useShortcuts } from "./useShortcuts.ts";
 import { useReminders } from "./useReminders.ts";
 import { useSync } from "./sync.ts";
@@ -45,9 +45,12 @@ function Main() {
   useSync();
   useReminders();
   const error = Stuff.useSelector((s) => s.context.error);
+  const { sidebar } = usePanel();
   return (
-    <div className="grid h-screen grid-cols-[232px_minmax(0,1fr)] text-[13px]">
-      <Sidebar />
+    <div
+      className={`grid h-screen text-[13px] ${sidebar ? "grid-cols-[232px_minmax(0,1fr)]" : "grid-cols-[minmax(0,1fr)]"}`}
+    >
+      {sidebar && <Sidebar />}
       <main className="min-h-0 min-w-0">
         <ListView />
       </main>

@@ -4,7 +4,7 @@ import { hlc } from "./hlc";
 import { world } from "./lists";
 import type { Todo } from "./model";
 import { add, setStatus, type Ctx } from "./ops";
-import { advance, makeRepeating, spawnDue, stopRepeating } from "./repeat";
+import { advance, makeRepeating, setRepeat, spawnDue, stopRepeating } from "./repeat";
 
 const ctxAt = (today: string, docs = new Map()): Ctx => {
   let n = 0;
@@ -90,6 +90,41 @@ describe("repeating to-dos", () => {
     const [todo] = apply(ctx, add("todo", { title: "x" }, "today")(ctx));
     apply(ctx, makeRepeating(todo!.id, { mode: "after", every: 1, unit: "day" })(ctx));
     apply(ctx, stopRepeating(todo!.id)(ctx));
+    expect(world(ctx.docs.values()).todos.map((t) => [t.title, t.template, t.repeat])).toEqual([
+      ["x", null, null],
+    ]);
+  });
+  it("setting a rule on a plain to-do makes it repeat", () => {
+    const ctx = ctxAt("2026-11-23");
+    const [todo] = apply(ctx, add("todo", { title: "Rent" }, "today")(ctx));
+    apply(ctx, setRepeat(todo!.id, { mode: "schedule", every: 1, unit: "week" })(ctx));
+    expect(world(ctx.docs.values()).todos.find((t) => t.repeat)?.next).toBe("2026-11-30");
+  });
+
+  it("edits the template's rule in place, from an instance or from the template itself", () => {
+    const ctx = ctxAt("2026-11-23");
+    const [todo] = apply(ctx, add("todo", { title: "Rent" }, "today")(ctx));
+    apply(ctx, makeRepeating(todo!.id, { mode: "schedule", every: 1, unit: "week" })(ctx));
+    const template = () => world(ctx.docs.values()).todos.find((t) => t.repeat)!;
+    const id = template().id;
+
+    apply(ctx, setRepeat(todo!.id, { mode: "schedule", every: 2, unit: "week" })(ctx));
+    expect(template()).toMatchObject({ id, repeat: { every: 2 }, next: "2026-12-07" });
+
+    apply(ctx, setRepeat(id, { mode: "schedule", every: 1, unit: "month" })(ctx));
+    expect(template()).toMatchObject({ id, repeat: { unit: "month" }, next: "2026-12-23" });
+
+    apply(ctx, setRepeat(id, { mode: "after", every: 3, unit: "day" })(ctx));
+    expect(template()).toMatchObject({ id, repeat: { mode: "after" }, next: null });
+    expect(world(ctx.docs.values()).todos.filter((t) => t.repeat)).toHaveLength(1);
+  });
+
+  it("stopping from the template removes it and unlinks its instances", () => {
+    const ctx = ctxAt("2026-11-23");
+    const [todo] = apply(ctx, add("todo", { title: "x" }, "today")(ctx));
+    apply(ctx, makeRepeating(todo!.id, { mode: "schedule", every: 1, unit: "day" })(ctx));
+    const template = world(ctx.docs.values()).todos.find((t) => t.repeat)!;
+    apply(ctx, stopRepeating(template.id)(ctx));
     expect(world(ctx.docs.values()).todos.map((t) => [t.title, t.template, t.repeat])).toEqual([
       ["x", null, null],
     ]);

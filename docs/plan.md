@@ -19,6 +19,6 @@ Done: everything in `docs/parity.md` marked ✅.
 Next:
 
 - Check natively in the built `stuff.app`: Ctrl+Space Quick Entry, ⌃⌘N second window, reminder notifications, keychain prompt with the "Stuff Local Dev" identity (`scripts/local-signing-identity.sh`, not yet run on this Mac).
-- Undo/redo; editing a repeating rule's template directly; per-tag keyboard shortcuts.
+- Per-tag keyboard shortcuts.
 - The sync check drives two webview instances with nostr-tools standing in for `vault.rs`; a native two-app run (`STUFF_PROFILE=a` / `b`, `open -n`) is still to do.
 - A third-party extension loader (plan in `docs/extensibility.md`); a passphrase mode for the folder adapter; CLI import from a Things database.

@@ -88,4 +88,27 @@ describe("app machine", () => {
     });
     expect(actor.getSnapshot().context.error).toBe("No item x");
   });
+
+  it("undoes and redoes edits, and a new edit clears the redo stack", async () => {
+    const { d } = deps();
+    const actor = start(d);
+    await ready(actor);
+    const titles = () =>
+      list(world(actor.getSnapshot().context.docs.values()), "inbox", "2026-11-23")[0]!.items.map(
+        (t) => t.title,
+      );
+    actor.send({ type: "change", op: add("todo", { title: "a" }, "inbox") });
+    actor.send({ type: "change", op: add("todo", { title: "b" }, "inbox") });
+    actor.send({ type: "undo" });
+    expect(titles()).toEqual(["a"]);
+    actor.send({ type: "undo" });
+    expect(titles()).toEqual([]);
+    actor.send({ type: "redo" });
+    actor.send({ type: "undo" });
+    actor.send({ type: "change", op: add("todo", { title: "c" }, "inbox") });
+    actor.send({ type: "redo" });
+    expect(titles()).toEqual(["c"]);
+    expect(actor.getSnapshot().context.redo).toEqual([]);
+    expect(d.save).toHaveBeenLastCalledWith([expect.objectContaining({ type: "todo" })], true);
+  });
 });
