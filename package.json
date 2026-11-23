@@ -1,0 +1,22 @@
+{
+  "name": "stuff",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @stuff/desktop tauri dev",
+    "build": "scripts/build.sh",
+    "test": "turbo test",
+    "check-types": "turbo check-types",
+    "lint": "oxlint --deny-warnings",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "gate": "pnpm lint && pnpm fmt:check && pnpm check-types && pnpm test && cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml && pnpm build"
+  },
+  "devDependencies": {
+    "oxfmt": "0.79.0",
+    "oxlint": "1.94.0",
+    "turbo": "2.11.13"
+  },
+  "packageManager": "pnpm@11.18.0"
+}

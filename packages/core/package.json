@@ -1,0 +1,25 @@
+{
+  "name": "@stuff/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "check-types": "tsc"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.0.1",
+    "fractional-indexing": "4.0.0",
+    "nostr-tools": "catalog:",
+    "xstate": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
