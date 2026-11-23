@@ -24,4 +24,5 @@ See `CLAUDE.md` for the layout and commands; `docs/spec.md` for the data model a
 pnpm install
 pnpm dev
 pnpm gate
+pnpm design   # design playground: the real UI with live theme controls, one HTML file
 ```

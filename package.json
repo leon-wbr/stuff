@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @stuff/desktop tauri dev",
     "build": "scripts/build.sh",
+    "design": "pnpm --filter @stuff/playground build --outDir \"${DESIGN_OUT:-$HOME/work/reports/stuff/design}\"",
     "test": "turbo test",
     "check-types": "turbo check-types",
     "lint": "oxlint --deny-warnings",

@@ -109,7 +109,7 @@ export function Sidebar() {
     });
   const topTags = w.tags.filter((t) => !t.parent);
   return (
-    <aside className="flex min-h-0 flex-col border-r bg-sidebar text-[13px]">
+    <aside className="flex min-h-0 flex-col border-r bg-sidebar text-ui">
       <div data-tauri-drag-region className="h-12 shrink-0" />
       <nav aria-label="Lists" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
         {BUILT_IN.map((l, i) => (
@@ -139,7 +139,7 @@ export function Sidebar() {
           ))}
         {topTags.length > 0 && (
           <div className="mt-4">
-            <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground">Tags</p>
+            <p className="px-2 pb-1 text-meta font-medium text-muted-foreground">Tags</p>
             {w.tags.map((t) => (
               <Item
                 key={t.id}
@@ -158,11 +158,7 @@ export function Sidebar() {
             <PlusIcon className="size-4" />
             New List
           </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="start"
-            className="w-48 gap-0 rounded-xl p-1 text-[13px]"
-          >
+          <PopoverContent side="top" align="start" className="w-48 gap-0 rounded-xl p-1 text-ui">
             <button
               type="button"
               className="w-full rounded-md px-2 py-1.5 text-left hover:bg-accent"

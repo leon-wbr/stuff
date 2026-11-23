@@ -60,7 +60,7 @@ export function WhenPicker({ ids, done }: { ids: Id[]; done(): void }) {
     return !!t && (t.area || (t.type === "todo" && t.project));
   };
   return (
-    <div className="flex flex-col gap-0.5 text-[13px]">
+    <div className="flex flex-col gap-0.5 text-ui">
       <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">When</p>
       <Choice
         icon={<StarIcon weight="fill" className="size-4 text-today" />}
@@ -146,7 +146,7 @@ export function DeadlinePicker({ ids, done }: { ids: Id[]; done(): void }) {
   const [date, setDate] = useState(first?.deadline ?? addDays(today, 7));
   return (
     <form
-      className="flex flex-col gap-2 text-[13px]"
+      className="flex flex-col gap-2 text-ui"
       onSubmit={(e) => {
         e.preventDefault();
         change(set(ids, { deadline: date || null }));
@@ -206,10 +206,10 @@ export function MovePicker({ ids, done }: { ids: Id[]; done(): void }) {
             </Choice>
           ));
   return (
-    <div className="flex max-h-80 flex-col gap-0.5 overflow-y-auto text-[13px]">
+    <div className="flex max-h-80 flex-col gap-0.5 overflow-y-auto text-ui">
       <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">Move to</p>
       {!projectsMoving && (
-        <Choice icon={<TrayIcon className="size-4 text-sky-600" />} onClick={() => go("inbox")}>
+        <Choice icon={<TrayIcon className="size-4 text-inbox" />} onClick={() => go("inbox")}>
           Inbox
         </Choice>
       )}
@@ -262,7 +262,7 @@ export function TagPicker({ ids, done }: { ids: Id[]; done(): void }) {
     return parent && d < 8 ? depth(parent, d + 1) : d;
   };
   return (
-    <div className="flex flex-col gap-0.5 text-[13px]">
+    <div className="flex flex-col gap-0.5 text-ui">
       <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">Tags</p>
       <div className="flex max-h-64 flex-col overflow-y-auto">
         {w.tags.map((t) => (
@@ -322,7 +322,7 @@ export function RepeatPicker({ id, done }: { id: Id; done(): void }) {
   );
   return (
     <form
-      className="flex flex-col gap-2 text-[13px]"
+      className="flex flex-col gap-2 text-ui"
       onSubmit={(e) => {
         e.preventDefault();
         if (todo?.template) change(stopRepeating(id));

@@ -46,7 +46,7 @@ function Main() {
   useReminders();
   const error = Stuff.useSelector((s) => s.context.error);
   return (
-    <div className="grid h-screen grid-cols-[232px_minmax(0,1fr)] text-[13px]">
+    <div className="grid h-screen grid-cols-[var(--sidebar-width)_minmax(0,1fr)] text-ui">
       <Sidebar />
       <main className="min-h-0 min-w-0">
         <ListView />

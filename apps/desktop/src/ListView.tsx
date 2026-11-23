@@ -105,10 +105,10 @@ function SectionHeader({ section, view, today }: { section: Section; view: View;
             e.target.value !== section.title &&
             change(set([section.ref!], { title: e.target.value }))
           }
-          className="flex-1 bg-transparent font-semibold text-primary outline-none"
+          className="flex-1 bg-transparent font-heading text-primary outline-none"
         />
       ) : (
-        <span className="font-semibold">{section.title}</span>
+        <span className="font-heading">{section.title}</span>
       )}
       {heading && (
         <Popover>
@@ -118,7 +118,7 @@ function SectionHeader({ section, view, today }: { section: Section; view: View;
           >
             <DotsThreeIcon className="size-4" />
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-44 gap-0 rounded-xl p-1 text-[13px]">
+          <PopoverContent align="end" className="w-44 gap-0 rounded-xl p-1 text-ui">
             <MenuItem onClick={() => change(set([section.ref!], { archived: true }))}>
               Archive heading
             </MenuItem>
@@ -168,10 +168,10 @@ function Header({ view, w, today }: { view: View; w: World; today: Day }) {
               e.target.value !== item.title && change(set([id], { title: e.target.value }))
             }
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            className="min-w-0 flex-1 bg-transparent text-2xl font-semibold outline-none placeholder:text-muted-foreground/50"
+            className="min-w-0 flex-1 bg-transparent font-display text-title font-title outline-none placeholder:text-muted-foreground/50"
           />
         ) : (
-          <h1 className="flex-1 text-2xl font-semibold">{viewTitle(w, view)}</h1>
+          <h1 className="flex-1 font-display text-title font-title">{viewTitle(w, view)}</h1>
         )}
         {project && (
           <Popover>
@@ -181,7 +181,7 @@ function Header({ view, w, today }: { view: View; w: World; today: Day }) {
             >
               <DotsThreeIcon className="size-5" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-52 gap-0 rounded-xl p-1 text-[13px]">
+            <PopoverContent align="end" className="w-52 gap-0 rounded-xl p-1 text-ui">
               <MenuItem onClick={() => change(setStatus([id], "completed"))}>
                 {project.status === "completed" ? "Reopen project" : "Complete project"}
               </MenuItem>
@@ -211,7 +211,7 @@ function Header({ view, w, today }: { view: View; w: World; today: Day }) {
             >
               <DotsThreeIcon className="size-5" />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-44 gap-0 rounded-xl p-1 text-[13px]">
+            <PopoverContent align="end" className="w-44 gap-0 rounded-xl p-1 text-ui">
               <MenuItem
                 onClick={() => change(add("project", { title: "", area: id }, `area:${id}`))}
               >
@@ -450,7 +450,7 @@ function Toolbar(props: {
           onClick={props.onAdd}
           aria-label="New To-Do"
           title="New To-Do (drag to place it)"
-          className="absolute -top-7 right-8 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:cursor-grabbing"
+          className="absolute -top-7 right-8 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-fab transition-transform hover:scale-105 active:cursor-grabbing"
         >
           <PlusIcon weight="bold" className="size-5" />
         </button>

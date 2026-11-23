@@ -7,7 +7,8 @@ A macOS to-do app in the spirit of Things 3: local-first, synced between Macs ov
 - `apps/desktop`: Tauri 2 app. `src/` is the React UI; `src/app.ts` wires the core machine to Tauri (every `invoke` and `listen` is injected there). One file per view: `Sidebar`, `ListView`, `Row`, `Editor`, `pickers`, `QuickFind`, `QuickEntry`, `Settings`, `DataSettings`. `sync.ts` runs the sync loop, `useShortcuts.ts` the keyboard, `useReminders.ts` notifications.
 - `apps/desktop/src-tauri`: Rust host. `lib.rs` holds commands, windows (main windows `main`, `main-N`; Quick Entry `quick`) and the Ctrl+Space global shortcut; `vault.rs` seals (NIP-44 encrypt to self + sign kind 30078) and opens sync events; `store.rs` is the SQLite store; `things.rs` reads a Things database read-only.
 - `packages/core`: all logic as plain TS, exported raw (`@stuff/core/<file>`). `doc.ts` (per-field LWW documents), `hlc.ts`, `lists.ts` (Inbox, Today, … selectors), `ops.ts` (edits as `Op`s returning changed documents), `repeat.ts`, `reminders.ts`, `things.ts` (import), `thingsUrl.ts` (hand-off), `backup.ts`, `sync.ts` (sync engine), `relays.ts` (the only module that talks to relays), `keys.ts` (shortcut map), `search.ts` (Quick Find), `machine.ts` (XState app machine).
-- `packages/ui`: shadcn components (Base UI, Phosphor icons) and the Tailwind 4 theme, light and dark (`.dark` on `<html>`).
+- `packages/ui`: shadcn components (Base UI, Phosphor icons) and the Tailwind 4 theme, light and dark (`.dark` on `<html>`). Colours, fonts, type sizes, row height, sidebar width, checkbox shape and shadows are CSS variables in `globals.css`; use their utilities (`text-ui`, `text-meta`, `text-title`, `font-display`, `min-h-(--row-height)`, `text-inbox`, …) rather than literal values.
+- `apps/playground`: the design playground. It renders the real desktop `App` in iframes (Tauri IPC stubbed in `tauri.ts`, synthetic data from `seed.ts`) next to a panel that edits the theme variables live; `tokens.ts` mirrors the variables in `globals.css` and `presets.ts` holds the named presets. Builds to one self-contained `index.html` that works from file://.
 
 ## Architecture
 
@@ -20,11 +21,12 @@ A macOS to-do app in the spirit of Things 3: local-first, synced between Macs ov
 ```sh
 pnpm install
 pnpm dev          # tauri dev (Vite on :1430, strict port)
-pnpm test         # vitest via turbo (packages/core)
+pnpm test         # vitest via turbo (packages/core, apps/playground)
 pnpm check-types  # tsc (TypeScript 7) via turbo
 pnpm lint         # oxlint --deny-warnings
 pnpm fmt          # oxfmt; fmt:check to verify
 pnpm build        # tauri build → stuff.app
+pnpm design       # design playground → ~/work/reports/stuff/design/index.html (DESIGN_OUT to override)
 pnpm gate         # lint, fmt:check, check-types, test, cargo test, build
 ```
 
@@ -39,6 +41,7 @@ pnpm gate         # lint, fmt:check, check-types, test, cargo test, build
 
 ## Gotchas
 
+- **A new theme variable** goes in `globals.css` (`:root`, `.dark` if it differs, and `@theme inline` for a utility) and in `apps/playground/src/tokens.ts` (`BASE` plus a control), or the playground can't tweak it.
 - **A new Tauri command needs three edits:** `src-tauri/build.rs`, `generate_handler!` in `lib.rs`, and `allow-<command>` in `capabilities/main.json`.
 - Store writes always emit `store-changed`, including to the window that wrote; merging is idempotent, so that's fine.
 - Fractional indexes compare with `<`, never `localeCompare`.

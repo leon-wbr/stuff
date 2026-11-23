@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useChange, useWorld } from "./app.ts";
 
 const WHEN = [
-  { where: "inbox", label: "Inbox", Icon: TrayIcon, color: "text-sky-600" },
+  { where: "inbox", label: "Inbox", Icon: TrayIcon, color: "text-inbox" },
   { where: "today", label: "Today", Icon: StarIcon, color: "text-today" },
   { where: "evening", label: "This Evening", Icon: MoonIcon, color: "text-evening" },
   { where: "someday", label: "Someday", Icon: ArchiveIcon, color: "text-someday" },
@@ -58,7 +58,7 @@ export function QuickEntry() {
         save();
       }}
       onKeyDown={(e) => e.key === "Escape" && close()}
-      className="flex h-screen flex-col gap-2 rounded-xl border bg-card p-4 text-[13px]"
+      className="flex h-screen flex-col gap-2 rounded-xl border bg-card p-4 text-ui"
     >
       <input
         ref={input}

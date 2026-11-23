@@ -1,0 +1,30 @@
+{
+  "name": "@stuff/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "check-types": "tsc"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "catalog:",
+    "@stuff/core": "workspace:*",
+    "@stuff/ui": "workspace:*",
+    "@xstate/react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
