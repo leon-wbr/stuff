@@ -19,6 +19,7 @@
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "things:*" }]
     },
+    "opener:allow-reveal-item-in-dir",
     "allow-key-status",
     "allow-generate-key",
     "allow-import-key",
@@ -33,6 +34,7 @@
     "allow-things-read",
     "allow-text-read",
     "allow-text-write",
+    "allow-themes-load",
     "allow-new-window",
     "allow-quick-entry"
   ]

@@ -6,7 +6,8 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./components/*": "./src/components/*.tsx",
-    "./lib/*": "./src/lib/*.ts"
+    "./lib/*": "./src/lib/*.ts",
+    "./themes": "./src/themes.ts"
   },
   "scripts": {
     "check-types": "tsc"

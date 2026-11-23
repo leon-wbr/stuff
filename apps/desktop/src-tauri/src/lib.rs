@@ -1,4 +1,5 @@
 mod store;
+mod themes;
 mod things;
 mod vault;
 
@@ -167,6 +168,13 @@ fn text_write(path: PathBuf, text: String) -> Result<(), String> {
     std::fs::write(path, text).map_err(|e| e.to_string())
 }
 
+struct ThemesDir(PathBuf);
+
+#[tauri::command]
+fn themes_load(dir: State<ThemesDir>) -> Value {
+    json!({ "dir": dir.0, "files": themes::read(&dir.0) })
+}
+
 static WINDOWS: AtomicU32 = AtomicU32::new(1);
 
 fn main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
@@ -232,6 +240,15 @@ pub fn run() {
         .setup(move |app| {
             let path = data_dir(app.handle())?.join("stuff.sqlite");
             app.manage(Store::open(&path)?);
+            let themes_dir = data_dir(app.handle())?.join("themes");
+            if let Err(e) = themes::prepare(&themes_dir) {
+                eprintln!("Themes folder unavailable: {e}");
+            }
+            let handle = app.handle().clone();
+            themes::watch(themes_dir.clone(), std::time::Duration::from_secs(1), move || {
+                let _ = handle.emit("themes-changed", ());
+            });
+            app.manage(ThemesDir(themes_dir));
             if let Err(e) = app.global_shortcut().register(shortcut) {
                 eprintln!("Quick Entry shortcut unavailable: {e}");
             }
@@ -252,6 +269,7 @@ pub fn run() {
             things_read,
             text_read,
             text_write,
+            themes_load,
             new_window,
             quick_entry
         ])

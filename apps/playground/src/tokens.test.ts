@@ -1,15 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
+import { COLOR_KEYS, DEFAULT_THEME, parseTheme, VAR_KEYS } from "@stuff/core/theme";
+import { BUILT_IN_THEMES } from "@stuff/ui/themes";
 import { PRESETS } from "./presets.ts";
 import {
   BASE,
   COLORS,
   contrast,
-  exportText,
   loadTheme,
   normalizeHex,
   setColor,
-  themeCss,
+  themeFile,
   VARS,
   type Theme,
 } from "./tokens.ts";
@@ -34,24 +35,6 @@ describe("contrast", () => {
   });
   test("composites a translucent foreground over the background", () => {
     expect(contrast("#00000000", "#ffffff")).toBeCloseTo(1, 5);
-  });
-});
-
-describe("themeCss", () => {
-  test("puts light colours and sizes on :root and dark colours on :root.dark", () => {
-    const css = themeCss({
-      ...BASE,
-      light: { ...BASE.light, background: "#ffffff" },
-      dark: { ...BASE.dark, background: "#000000" },
-    });
-    expect(css).toMatch(/:root \{[^}]*--background: #ffffff;/);
-    expect(css).toMatch(/:root\.dark \{[^}]*--background: #000000;/);
-    expect(css).toMatch(/:root \{[^}]*--row-height: 30px;/);
-  });
-  test("can target the app's own .dark selector and only list changes", () => {
-    const theme: Theme = { ...BASE, vars: { ...BASE.vars, "row-height": "34px" } };
-    const css = themeCss(theme, { dark: ".dark", onlyChanged: true });
-    expect(css).toBe(":root {\n  --row-height: 34px;\n}\n");
   });
 });
 
@@ -89,15 +72,58 @@ describe("loadTheme", () => {
   });
 });
 
-describe("exportText", () => {
-  test("names the preset and carries CSS for globals.css plus the full JSON", () => {
+describe("themeFile", () => {
+  test("is a theme file the app accepts, with every value", () => {
     const theme: Theme = { ...BASE, light: { ...BASE.light, today: "#b07a12" } };
-    const text = exportText(theme, "Sage, sharpened");
-    expect(text).toContain("Sage, sharpened");
-    expect(text).toContain("--today: #b07a12;");
-    expect(text).not.toContain("--background:");
-    const json = JSON.parse(text.slice(text.indexOf("```json") + 7, text.lastIndexOf("```")));
-    expect(json.light.today).toBe("#b07a12");
+    const result = parseTheme(themeFile(theme, "Sage (custom)"));
+    expect(result).toEqual({ ok: true, theme: { name: "Sage (custom)", ...theme } });
+  });
+});
+
+describe("built-in theme files", () => {
+  test.each(BUILT_IN_THEMES.map((text) => [JSON.parse(text).name, text] as const))(
+    "%s parses and sets every key",
+    (_, text) => {
+      const result = parseTheme(text);
+      if (!result.ok) throw new Error(result.error);
+      for (const mode of ["light", "dark"] as const)
+        expect(Object.keys(result.theme[mode]).sort()).toEqual([...COLOR_KEYS].sort());
+      expect(Object.keys(result.theme.vars).sort()).toEqual([...VAR_KEYS].sort());
+    },
+  );
+
+  test("the first is the default, Sage", () => {
+    expect(JSON.parse(BUILT_IN_THEMES[0]!).name).toBe(DEFAULT_THEME);
+  });
+
+  test("the playground's controls and the JSON Schema cover exactly the theme keys", () => {
+    expect(COLORS.map((c) => c.key).sort()).toEqual([...COLOR_KEYS].sort());
+    expect(VARS.map((v) => v.key).sort()).toEqual([...VAR_KEYS].sort());
+    const schema = JSON.parse(
+      readFileSync(
+        new URL("../../../packages/ui/themes/theme.schema.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    for (const mode of ["light", "dark"])
+      expect(Object.keys(schema.properties[mode].properties).sort()).toEqual(
+        [...COLOR_KEYS].sort(),
+      );
+    expect(Object.keys(schema.properties.vars.properties).sort()).toEqual([...VAR_KEYS].sort());
+  });
+
+  test("the schema's value pattern rejects what the parser rejects", () => {
+    const schema = JSON.parse(
+      readFileSync(
+        new URL("../../../packages/ui/themes/theme.schema.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const pattern = new RegExp(schema.$defs.value.pattern);
+    for (const bad of ["red;", "a{", "}", "url(x)", "URL(x)", "@import", "<b>", "\\7d"])
+      expect(pattern.test(bad), bad).toBe(false);
+    for (const good of ["#33604f", "oklch(0.7 0.1 150)", '"Avenir Next", sans-serif', "50%"])
+      expect(pattern.test(good), good).toBe(true);
   });
 });
 
@@ -118,7 +144,7 @@ describe("schema and presets", () => {
     expect(PRESETS.filter((p) => p.recommended)).toHaveLength(1);
   });
 
-  test.each(PRESETS.filter((p) => p.name !== "Current").map((p) => [p.name, p] as const))(
+  test.each(PRESETS.filter((p) => p.name !== "Original").map((p) => [p.name, p] as const))(
     "%s keeps body and meta text readable (AA) in light and dark",
     (_, { theme }) => {
       for (const mode of ["light", "dark"] as const) {

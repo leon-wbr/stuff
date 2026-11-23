@@ -13,10 +13,18 @@ const store = new Map<string, Doc>(
 const callbacks = new Map<number, (event: unknown) => void>();
 const listeners: Record<string, number[]> = {};
 let next = 1;
+const emit = (event: string, payload: unknown) =>
+  (listeners[event] ?? []).forEach((id) => callbacks.get(id)?.({ event, id, payload }));
+/** The stubbed themes folder; `putThemeFile(name, text)` drops a file in, as a check would. */
+const themeFiles = new Map<string, string>();
 
 type Args = Record<string, unknown> & { event?: string; handler?: number; docs?: Doc[] };
 
 Object.assign(window, {
+  putThemeFile: (file: string, text: string) => {
+    themeFiles.set(file, text);
+    emit("themes-changed", null);
+  },
   __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} },
   __TAURI_INTERNALS__: {
     metadata: {
@@ -33,12 +41,13 @@ Object.assign(window, {
       if (cmd === "store_load") return [...store.values()];
       if (cmd === "store_save") {
         for (const doc of args.docs!) store.set(doc.id, doc);
-        setTimeout(() =>
-          (listeners["store-changed"] ?? []).forEach((id) =>
-            callbacks.get(id)?.({ event: "store-changed", id, payload: { docs: args.docs } }),
-          ),
-        );
+        setTimeout(() => emit("store-changed", { docs: args.docs }));
       }
+      if (cmd === "themes_load")
+        return {
+          dir: "~/Library/Application Support/app.stuff.desktop/themes",
+          files: [...themeFiles].map(([file, text]) => ({ file, text })),
+        };
       return null;
     },
   },

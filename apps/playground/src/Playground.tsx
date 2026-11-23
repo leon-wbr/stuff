@@ -6,11 +6,11 @@ import { PRESETS, RECOMMENDATIONS } from "./presets.ts";
 import {
   COLORS,
   contrast,
-  exportText,
   loadTheme,
   normalizeHex,
   setColor,
   themeCss,
+  themeFile,
   VARS,
   type Mode,
   type Theme,
@@ -55,7 +55,7 @@ function load(): Saved {
       preset?: string;
     } | null;
     if (raw?.theme)
-      return { theme: loadTheme(JSON.stringify(raw.theme)), preset: raw.preset ?? "Current" };
+      return { theme: loadTheme(JSON.stringify(raw.theme)), preset: raw.preset ?? "Sage" };
   } catch {}
   return { theme: PRESETS[0]!.theme, preset: PRESETS[0]!.name };
 }
@@ -84,7 +84,7 @@ export function Playground() {
     update({ ...theme, vars: { ...theme.vars, [key]: value } });
 
   const copy = async () => {
-    const text = exportText(theme, modified ? `${preset}, modified` : preset);
+    const text = themeFile(theme, modified ? `${preset} (custom)` : preset);
     setExported(text);
     await navigator.clipboard?.writeText(text).catch(() => {});
   };
@@ -118,7 +118,8 @@ export function Playground() {
           {exported && (
             <div className="mt-3">
               <p className="mb-1 text-muted-foreground">
-                Copied. Paste it to a worker; it's also here:
+                Copied a theme file. Save it as a .json file in the app's themes folder; it's also
+                here:
               </p>
               <textarea
                 readOnly
@@ -147,7 +148,7 @@ export function Playground() {
                       {p.name}
                       {p.recommended && (
                         <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-px text-[11px] font-medium text-primary-foreground">
-                          <SealCheckIcon weight="fill" /> Start here
+                          <SealCheckIcon weight="fill" /> Default
                         </span>
                       )}
                       {p.name === preset && modified && (
@@ -235,16 +236,15 @@ export function Playground() {
           <Section title="Load settings">
             <textarea
               aria-label="Paste settings"
-              placeholder="Paste a copied settings block here"
+              placeholder="Paste a theme file here"
               onChange={(e) => {
                 const text = e.target.value;
-                const json = text.match(/```json\s*([\s\S]*?)```/)?.[1] ?? text;
                 try {
-                  JSON.parse(json);
+                  JSON.parse(text);
                 } catch {
                   return;
                 }
-                setSaved({ theme: loadTheme(json), preset: "Pasted" });
+                setSaved({ theme: loadTheme(text), preset: "Pasted" });
                 e.target.value = "";
               }}
               className="h-20 w-full rounded-md border bg-card p-2 font-mono text-[11px]"

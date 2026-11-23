@@ -1,4 +1,5 @@
 import { saveSettings } from "@stuff/core/ops";
+import { DEFAULT_THEME } from "@stuff/core/theme";
 import { Button } from "@stuff/ui/components/button";
 import {
   Dialog,
@@ -9,7 +10,8 @@ import {
 } from "@stuff/ui/components/dialog";
 import { Input } from "@stuff/ui/components/input";
 import { useState, type ReactNode } from "react";
-import { Stuff, useChange, useWorld } from "./app.ts";
+import { Stuff, themesFolder, useChange, useWorld } from "./app.ts";
+import { useThemes } from "./themes.ts";
 import { usePanel } from "./ui.tsx";
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -92,6 +94,59 @@ function Appearance() {
   );
 }
 
+function ThemePicker() {
+  const { themes, errors, dir } = useThemes();
+  const change = useChange();
+  const name = useWorld().settings?.themeName;
+  const selected = themes.some((t) => t.name === name) ? name : DEFAULT_THEME;
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Theme">
+        {themes.map((t) => (
+          <button
+            key={t.name}
+            type="button"
+            role="radio"
+            aria-checked={t.name === selected}
+            title={t.file}
+            onClick={() => change(saveSettings({ themeName: t.name }))}
+            className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-left text-ui hover:bg-muted aria-checked:border-primary aria-checked:bg-selected"
+          >
+            <span
+              className="flex size-4 shrink-0 items-center justify-center rounded-full border"
+              style={{ background: t.light.background ?? themes[0]!.light.background }}
+            >
+              <span
+                className="size-2 rounded-full"
+                style={{ background: t.light.primary ?? themes[0]!.light.primary }}
+              />
+            </span>
+            <span className="truncate">{t.name}</span>
+          </button>
+        ))}
+      </div>
+      {errors.map((e) => (
+        <p key={e.file} className="text-meta text-destructive">
+          {e.file}: {e.error}
+        </p>
+      ))}
+      {dir && (
+        <p className="text-meta text-muted-foreground">
+          Add your own by dropping a theme file into{" "}
+          <button
+            type="button"
+            className="underline underline-offset-2 hover:text-foreground"
+            onClick={() => void themesFolder.reveal(dir)}
+          >
+            the themes folder
+          </button>
+          .
+        </p>
+      )}
+    </>
+  );
+}
+
 export const useTheme = () => useWorld().settings?.theme ?? "system";
 
 export function SettingsDialog({ extra }: { extra?: ReactNode }) {
@@ -112,6 +167,7 @@ export function SettingsDialog({ extra }: { extra?: ReactNode }) {
           {extra}
           <Section title="Appearance">
             <Appearance />
+            <ThemePicker />
           </Section>
         </div>
       </DialogContent>

@@ -18,7 +18,7 @@ Each to-do, project, area, heading, tag, checklist item and the settings is its 
 
 ## Development
 
-See `CLAUDE.md` for the layout and commands; `docs/spec.md` for the data model and sync format.
+See `CLAUDE.md` for the layout and commands; `docs/spec.md` for the data model and sync format; `docs/themes.md` for adding a theme.
 
 ```sh
 pnpm install

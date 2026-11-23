@@ -1,3 +1,5 @@
+import { DEFAULT_THEME } from "./theme";
+
 export type Id = string;
 /** A calendar day, `YYYY-MM-DD`. */
 export type Day = string;
@@ -90,6 +92,7 @@ export interface Settings extends Base {
   type: "settings";
   relays: RelaySetting[] | null;
   theme: "system" | "light" | "dark";
+  themeName: string;
 }
 
 export type Item = Todo | Project | Heading | Area | Tag | ChecklistItem | Settings;
@@ -130,7 +133,7 @@ export const DEFAULTS: { [K in Type]: Fields<ItemOf<K>> } = {
   area: { title: "", index: "a0", tags: [], trashed: false },
   tag: { title: "", parent: null, index: "a0", shortcut: "", trashed: false },
   checklist: { title: "", todo: null, done: false, index: "a0", trashed: false },
-  settings: { relays: null, theme: "system", trashed: false },
+  settings: { relays: null, theme: "system", themeName: DEFAULT_THEME, trashed: false },
 };
 
 export const SETTINGS_ID = "settings";

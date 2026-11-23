@@ -15,6 +15,7 @@ fn main() {
             "things_read",
             "text_read",
             "text_write",
+            "themes_load",
             "new_window",
             "quick_entry",
         ]),

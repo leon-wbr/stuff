@@ -1,3 +1,6 @@
+import { themeCss as coreThemeCss } from "@stuff/core/theme";
+import { BUILT_IN_THEMES } from "@stuff/ui/themes";
+
 /** The design tokens the playground can tweak, mirroring packages/ui/src/styles/globals.css. */
 
 export type Mode = "light" | "dark";
@@ -139,79 +142,9 @@ export const VARS: VarControl[] = [
   },
 ];
 
-/** The app's tokens as they are in globals.css today. */
-export const BASE: Theme = {
-  light: {
-    background: "#fcfbf9",
-    foreground: "#26272b",
-    "muted-foreground": "#85847f",
-    sidebar: "#f4f2ee",
-    "sidebar-accent": "#e6e3dc",
-    selected: "#dfe9e3",
-    muted: "#f2f0ec",
-    card: "#ffffff",
-    popover: "#ffffff",
-    border: "#00000014",
-    primary: "#3d6b5a",
-    "primary-foreground": "#ffffff",
-    checkbox: "#3d6b5a",
-    "checkbox-border": "#85847f73",
-    ring: "#3d6b5a",
-    accent: "#e9eee9",
-    today: "#d99a2b",
-    evening: "#6f74b8",
-    inbox: "#0084d1",
-    upcoming: "#ec003f",
-    someday: "#a89a6a",
-    logbook: "#007a55",
-    deadline: "#c94a3f",
-    destructive: "#c94a3f",
-  },
-  dark: {
-    background: "#1d1e21",
-    foreground: "#e4e3df",
-    "muted-foreground": "#8d8c88",
-    sidebar: "#232427",
-    "sidebar-accent": "#31332f",
-    selected: "#2f3d36",
-    muted: "#26272b",
-    card: "#25262a",
-    popover: "#2a2b30",
-    border: "#ffffff14",
-    primary: "#7fb39d",
-    "primary-foreground": "#14211b",
-    checkbox: "#7fb39d",
-    "checkbox-border": "#8d8c8873",
-    ring: "#7fb39d",
-    accent: "#2c3531",
-    today: "#e5ae4a",
-    evening: "#9a9fe0",
-    inbox: "#00bcff",
-    upcoming: "#ff637e",
-    someday: "#c2b380",
-    logbook: "#00d492",
-    deadline: "#e0675b",
-    destructive: "#e0675b",
-  },
-  vars: {
-    "font-ui": FONTS[0]!.value,
-    "font-title": "var(--font-ui)",
-    "text-size": "13px",
-    "text-meta-size": "11px",
-    "text-title-size": "24px",
-    "weight-body": "400",
-    "weight-heading": "600",
-    "weight-title": "600",
-    "row-height": "30px",
-    spacing: "4px",
-    "sidebar-width": "232px",
-    radius: "8px",
-    "checkbox-size": "15px",
-    "checkbox-radius": "4px",
-    "editor-shadow": `0 1px 4px rgb(0 0 0 / 0.08), ${border}`,
-    "fab-shadow": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  },
-};
+const { light, dark, vars } = JSON.parse(BUILT_IN_THEMES[0]!) as Theme;
+/** The default theme, Sage, which is what globals.css holds. */
+export const BASE: Theme = { light, dark, vars };
 
 export function normalizeHex(input: string): string | null {
   const s = input.trim().replace(/^#/, "").toLowerCase();
@@ -250,30 +183,6 @@ export function setColor(theme: Theme, mode: Mode, key: string, value: string): 
   return { ...theme, [mode]: colors };
 }
 
-function block(selector: string, entries: [string, string][]) {
-  return entries.length
-    ? `${selector} {\n${entries.map(([k, v]) => `  --${k}: ${v};`).join("\n")}\n}\n`
-    : "";
-}
-
-export function themeCss(
-  theme: Theme,
-  { dark = ":root.dark", onlyChanged = false }: { dark?: string; onlyChanged?: boolean } = {},
-): string {
-  const pick = (values: Record<string, string>, base: Record<string, string>, keys: string[]) =>
-    keys
-      .filter((k) => !onlyChanged || values[k] !== base[k])
-      .map((k) => [k, values[k]!] as [string, string]);
-  const colorKeys = COLORS.map((c) => c.key);
-  const varKeys = VARS.map((v) => v.key);
-  return (
-    block(":root", [
-      ...pick(theme.light, BASE.light, colorKeys),
-      ...pick(theme.vars, BASE.vars, varKeys),
-    ]) + block(dark, pick(theme.dark, BASE.dark, colorKeys))
-  );
-}
-
 const safeVar = (v: unknown): v is string =>
   typeof v === "string" && v.length > 0 && v.length < 300 && !/[;{}<>]/.test(v);
 
@@ -300,20 +209,10 @@ export function loadTheme(raw: string | null): Theme {
   return { light: colors("light"), dark: colors("dark"), vars };
 }
 
-export function exportText(theme: Theme, preset: string): string {
-  const fence = "```";
-  const css = themeCss(theme, { dark: ".dark", onlyChanged: true }) || "/* no changes */\n";
-  return [
-    `stuff design settings, starting from the "${preset}" preset.`,
-    "",
-    "Changes against the app's current tokens, for packages/ui/src/styles/globals.css:",
-    `${fence}css`,
-    css.trimEnd(),
-    fence,
-    "",
-    "Full settings (load into the playground with Paste):",
-    `${fence}json`,
-    JSON.stringify(theme, null, 2),
-    fence,
-  ].join("\n");
+export const themeCss = (theme: Theme) => coreThemeCss({ name: "", ...theme });
+
+/** A theme file, ready to drop into the app's themes folder. */
+export function themeFile(theme: Theme, name: string): string {
+  const { light, dark, vars } = theme;
+  return `${JSON.stringify({ $schema: "./theme.schema.json", name, light, dark, vars }, null, 2)}\n`;
 }

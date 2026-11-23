@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stuff theme",
+  "description": "A theme for stuff. Every value sets one CSS custom property; keys that are left out fall back to the default theme (Sage), unknown keys are ignored.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Shown in Settings → Appearance."
+    },
+    "light": {
+      "type": "object",
+      "description": "Colours as any CSS colour value; missing ones fall back to Sage.",
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/value",
+          "description": "Background"
+        },
+        "foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Text"
+        },
+        "muted-foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Secondary text"
+        },
+        "sidebar": {
+          "$ref": "#/$defs/value",
+          "description": "Sidebar"
+        },
+        "sidebar-accent": {
+          "$ref": "#/$defs/value",
+          "description": "Sidebar selection"
+        },
+        "selected": {
+          "$ref": "#/$defs/value",
+          "description": "Selected row"
+        },
+        "muted": {
+          "$ref": "#/$defs/value",
+          "description": "Muted fill (hover, chips)"
+        },
+        "card": {
+          "$ref": "#/$defs/value",
+          "description": "Editor card"
+        },
+        "popover": {
+          "$ref": "#/$defs/value",
+          "description": "Popovers"
+        },
+        "border": {
+          "$ref": "#/$defs/value",
+          "description": "Borders"
+        },
+        "primary": {
+          "$ref": "#/$defs/value",
+          "description": "Primary / brand"
+        },
+        "primary-foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Text on primary"
+        },
+        "checkbox": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox (checked)"
+        },
+        "checkbox-border": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox outline"
+        },
+        "ring": {
+          "$ref": "#/$defs/value",
+          "description": "Focus ring"
+        },
+        "accent": {
+          "$ref": "#/$defs/value",
+          "description": "Menu hover"
+        },
+        "today": {
+          "$ref": "#/$defs/value",
+          "description": "Today star"
+        },
+        "evening": {
+          "$ref": "#/$defs/value",
+          "description": "Evening moon"
+        },
+        "inbox": {
+          "$ref": "#/$defs/value",
+          "description": "Inbox"
+        },
+        "upcoming": {
+          "$ref": "#/$defs/value",
+          "description": "Upcoming"
+        },
+        "someday": {
+          "$ref": "#/$defs/value",
+          "description": "Someday"
+        },
+        "logbook": {
+          "$ref": "#/$defs/value",
+          "description": "Logbook"
+        },
+        "deadline": {
+          "$ref": "#/$defs/value",
+          "description": "Deadline"
+        },
+        "destructive": {
+          "$ref": "#/$defs/value",
+          "description": "Destructive"
+        }
+      }
+    },
+    "dark": {
+      "type": "object",
+      "description": "Dark-mode colours as any CSS colour value; missing ones fall back to Sage.",
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/value",
+          "description": "Background"
+        },
+        "foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Text"
+        },
+        "muted-foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Secondary text"
+        },
+        "sidebar": {
+          "$ref": "#/$defs/value",
+          "description": "Sidebar"
+        },
+        "sidebar-accent": {
+          "$ref": "#/$defs/value",
+          "description": "Sidebar selection"
+        },
+        "selected": {
+          "$ref": "#/$defs/value",
+          "description": "Selected row"
+        },
+        "muted": {
+          "$ref": "#/$defs/value",
+          "description": "Muted fill (hover, chips)"
+        },
+        "card": {
+          "$ref": "#/$defs/value",
+          "description": "Editor card"
+        },
+        "popover": {
+          "$ref": "#/$defs/value",
+          "description": "Popovers"
+        },
+        "border": {
+          "$ref": "#/$defs/value",
+          "description": "Borders"
+        },
+        "primary": {
+          "$ref": "#/$defs/value",
+          "description": "Primary / brand"
+        },
+        "primary-foreground": {
+          "$ref": "#/$defs/value",
+          "description": "Text on primary"
+        },
+        "checkbox": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox (checked)"
+        },
+        "checkbox-border": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox outline"
+        },
+        "ring": {
+          "$ref": "#/$defs/value",
+          "description": "Focus ring"
+        },
+        "accent": {
+          "$ref": "#/$defs/value",
+          "description": "Menu hover"
+        },
+        "today": {
+          "$ref": "#/$defs/value",
+          "description": "Today star"
+        },
+        "evening": {
+          "$ref": "#/$defs/value",
+          "description": "Evening moon"
+        },
+        "inbox": {
+          "$ref": "#/$defs/value",
+          "description": "Inbox"
+        },
+        "upcoming": {
+          "$ref": "#/$defs/value",
+          "description": "Upcoming"
+        },
+        "someday": {
+          "$ref": "#/$defs/value",
+          "description": "Someday"
+        },
+        "logbook": {
+          "$ref": "#/$defs/value",
+          "description": "Logbook"
+        },
+        "deadline": {
+          "$ref": "#/$defs/value",
+          "description": "Deadline"
+        },
+        "destructive": {
+          "$ref": "#/$defs/value",
+          "description": "Destructive"
+        }
+      }
+    },
+    "vars": {
+      "type": "object",
+      "description": "Fonts, sizes, weights, spacing and shadows, shared by light and dark.",
+      "properties": {
+        "font-ui": {
+          "$ref": "#/$defs/value",
+          "description": "UI font"
+        },
+        "font-title": {
+          "$ref": "#/$defs/value",
+          "description": "List title font"
+        },
+        "text-size": {
+          "$ref": "#/$defs/value",
+          "description": "Body size"
+        },
+        "text-meta-size": {
+          "$ref": "#/$defs/value",
+          "description": "Meta size (tags, dates)"
+        },
+        "text-title-size": {
+          "$ref": "#/$defs/value",
+          "description": "List title size"
+        },
+        "weight-body": {
+          "$ref": "#/$defs/value",
+          "description": "Body weight"
+        },
+        "weight-heading": {
+          "$ref": "#/$defs/value",
+          "description": "Heading weight"
+        },
+        "weight-title": {
+          "$ref": "#/$defs/value",
+          "description": "Title weight"
+        },
+        "row-height": {
+          "$ref": "#/$defs/value",
+          "description": "Row height"
+        },
+        "spacing": {
+          "$ref": "#/$defs/value",
+          "description": "Spacing scale (all paddings & gaps)"
+        },
+        "sidebar-width": {
+          "$ref": "#/$defs/value",
+          "description": "Sidebar width"
+        },
+        "radius": {
+          "$ref": "#/$defs/value",
+          "description": "Corner radius"
+        },
+        "checkbox-size": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox size"
+        },
+        "checkbox-radius": {
+          "$ref": "#/$defs/value",
+          "description": "Checkbox shape"
+        },
+        "editor-shadow": {
+          "$ref": "#/$defs/value",
+          "description": "Editor card"
+        },
+        "fab-shadow": {
+          "$ref": "#/$defs/value",
+          "description": "New To-Do button"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "value": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?![\\s\\S]*[uU][rR][lL]\\()[^;{}@<>\\\\]*$",
+      "description": "A CSS value. ;, {, }, @, <, >, \\ and url( are not allowed."
+    }
+  }
+}

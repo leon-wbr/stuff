@@ -2,9 +2,11 @@ import { toDate } from "@stuff/core/days";
 import { world } from "@stuff/core/lists";
 import { appMachine, type View } from "@stuff/core/machine";
 import type { Op } from "@stuff/core/ops";
+import type { ThemeFile } from "@stuff/core/theme";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { createActorContext } from "@xstate/react";
 import { useCallback, useMemo } from "react";
 
@@ -30,6 +32,15 @@ const machine = appMachine(
 );
 
 export const Stuff = createActorContext(machine);
+
+export const themesFolder = {
+  load: () => invoke<{ dir: string; files: ThemeFile[] }>("themes_load"),
+  onChange: (cb: () => void) => {
+    const off = listen("themes-changed", cb);
+    return () => void off.then((unlisten) => unlisten());
+  },
+  reveal: (dir: string) => revealItemInDir(`${dir}/theme.schema.json`),
+};
 
 export function useWorld() {
   const docs = Stuff.useSelector((s) => s.context.docs);

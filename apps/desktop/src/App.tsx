@@ -1,10 +1,12 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect } from "react";
-import { isQuickEntry, Stuff } from "./app.ts";
+import { DEFAULT_THEME } from "@stuff/core/theme";
+import { isQuickEntry, Stuff, useWorld } from "./app.ts";
 import { ListView } from "./ListView.tsx";
 import { QuickEntry } from "./QuickEntry.tsx";
 import { QuickFind } from "./QuickFind.tsx";
 import { SettingsDialog, useTheme } from "./Settings.tsx";
+import { useApplyTheme } from "./themes.ts";
 import { Sidebar } from "./Sidebar.tsx";
 import { PanelProvider, PickerSheet } from "./ui.tsx";
 import { useShortcuts } from "./useShortcuts.ts";
@@ -14,6 +16,7 @@ import { DataSettings } from "./DataSettings.tsx";
 
 function useAppearance() {
   const theme = useTheme();
+  useApplyTheme(useWorld().settings?.themeName ?? DEFAULT_THEME);
   useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
     const apply = () =>
