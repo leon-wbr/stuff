@@ -26,21 +26,20 @@ pnpm dev          # tauri dev (Vite on :1430, strict port)
 pnpm test         # vitest via turbo (packages/core, packages/cli, apps/playground)
 pnpm e2e          # folder/Nostr/CLI end to end (STUFF_E2E_RELAY=ws://… for Nostr)
 pnpm install-cli  # build the CLI, link ~/.local/bin/stuff
-pnpm design       # design playground, one HTML file
 pnpm check-types  # tsc (TypeScript 7) via turbo
 pnpm lint         # oxlint --deny-warnings
 pnpm fmt          # oxfmt; fmt:check to verify
 pnpm build        # tauri build → stuff.app
-pnpm design       # design playground → ~/work/reports/stuff/design/index.html (DESIGN_OUT to override)
+pnpm design       # design playground → apps/playground/dist/index.html (DESIGN_OUT to override)
 pnpm gate         # lint, fmt:check, check-types, test, cargo test, build
 ```
 
 ## House rules
 
-- **Gate locally** (leon-wbr Actions are off): `reeve heavy -- pnpm gate` once per final head.
+- **Gate** with `pnpm gate` once per final head.
 - **Lint and format** with oxlint and oxfmt only.
 - **TDD in `packages/core`.** Keep relay, Tauri and storage access injected. Things fixtures are synthetic (`things.fixture.ts` builds one with `node:sqlite`); never commit a real Things database, its contents or screenshots of it.
-- **UI verification**: the Vite app in headless Chromium with Tauri IPC mocked and synthetic data; screenshots to `~/work/reports/stuff/`, not the repo.
+- **UI verification**: the Vite app in headless Chromium with Tauri IPC mocked and synthetic data; keep screenshots out of the repo.
 - **Local macOS signing**: `scripts/local-signing-identity.sh` creates "Stuff Local Dev" once; `pnpm build` signs with it so keychain trust survives rebuilds.
 - Never publish to real relays with a real key in tests; use a local relay (`docker run --rm`) and generated keys.
 
