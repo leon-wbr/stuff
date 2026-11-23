@@ -1,4 +1,6 @@
-# Parity checklist
+# Feature checklist
+
+What stuff covers, compared with Things 3 as a reference point for a mature Mac to-do app. stuff is an independent project, not a clone, and isn't affiliated with Cultured Code. Things is a trademark of Cultured Code GmbH & Co. KG.
 
 Status: ✅ done, 🟡 partial, ⬜ not yet. "Checked" means covered by core tests or the headless UI run (synthetic data); "native" means it needs a check in the built app.
 

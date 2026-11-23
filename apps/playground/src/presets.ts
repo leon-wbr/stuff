@@ -13,7 +13,7 @@ const RATIONALES: Record<string, string> = {
   Original:
     "What the app shipped before Sage: warm off-white, sage primary. Secondary text and the Today star fail contrast in light mode.",
   "Calm Blue":
-    "Close to Things: pure white, a cool grey sidebar, one confident blue and a yellow star. Familiar enough to switch without noticing.",
+    "Crisp and cool: pure white, a grey sidebar and a single blue accent, with the system font and generous rows.",
   "High Contrast":
     "For tired eyes and bright rooms: black on white, AAA secondary text, heavier outlines and a slightly larger body size.",
   "Paper & Ink":
@@ -21,7 +21,7 @@ const RATIONALES: Record<string, string> = {
   Graphite:
     "A dense pro tool: cool greys, colour only where time matters (Today, Upcoming, deadlines), 26px rows and a narrower sidebar.",
   Persimmon:
-    "A committed persimmon on true white, round checkboxes, SF Rounded and big bold titles. Friendly and unmistakably not Things.",
+    "A committed persimmon on true white, round checkboxes, SF Rounded and big bold titles. Friendly and bold.",
 };
 
 /** The app's built-in theme files. */

@@ -1,7 +1,12 @@
 {
   "name": "stuff",
   "private": true,
+  "description": "A local-first to-do app for the Mac, with optional end-to-end encrypted sync and a CLI",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leon-wbr/stuff.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @stuff/desktop tauri dev",
