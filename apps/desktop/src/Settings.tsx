@@ -25,7 +25,7 @@ export function Section({ title, children }: { title: string; children: ReactNod
   );
 }
 
-function KeySetup() {
+export function KeySetup() {
   const [nsec, setNsec] = useState("");
   const { npub, keyError } = Stuff.useSelector((s) => s.context);
   const saving = Stuff.useSelector(
@@ -161,9 +161,6 @@ export function SettingsDialog({ extra }: { extra?: ReactNode }) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-5">
-          <Section title="Key">
-            <KeySetup />
-          </Section>
           {extra}
           <Section title="Appearance">
             <Appearance />

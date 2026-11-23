@@ -14,8 +14,9 @@ import { addDays } from "@stuff/core/days";
 import { update } from "@stuff/core/doc";
 import type { Task } from "@stuff/core/lists";
 import type { Id, Repeat, Todo, Unit } from "@stuff/core/model";
+import { chain } from "@stuff/core/actions";
 import { add, moveTo, set, type Where } from "@stuff/core/ops";
-import { makeRepeating, stopRepeating } from "@stuff/core/repeat";
+import { setRepeat, stopRepeating } from "@stuff/core/repeat";
 import { Button } from "@stuff/ui/components/button";
 import { Input } from "@stuff/ui/components/input";
 import { useState, type ReactNode } from "react";
@@ -312,11 +313,65 @@ export function TagPicker({ ids, done }: { ids: Id[]; done(): void }) {
 
 const UNITS: Unit[] = ["day", "week", "month", "year"];
 
+/** A reminder time; a to-do without a date gets Today, since reminders need a day. */
+export function ReminderPicker({ ids, done }: { ids: Id[]; done(): void }) {
+  const change = useChange();
+  const w = useWorld();
+  const todos = ids.map((id) => w.byId.get(id)).filter((t): t is Todo => t?.type === "todo");
+  const [time, setTime] = useState(todos[0]?.reminder ?? "09:00");
+  const save = (reminder: string | null) => {
+    const undated = todos.filter((t) => !t.when).map((t) => t.id);
+    change(
+      chain(
+        set(
+          todos.map((t) => t.id),
+          { reminder },
+        ),
+        ...(reminder && undated.length ? [moveTo(undated, "today")] : []),
+      ),
+    );
+    done();
+  };
+  return (
+    <form
+      className="flex flex-col gap-2 text-ui"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save(time || null);
+      }}
+    >
+      <p className="text-xs font-medium text-muted-foreground">Reminder</p>
+      <input
+        type="time"
+        aria-label="Reminder time"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        className="rounded-md bg-muted px-2 py-1"
+      />
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" className="flex-1">
+          Remind me
+        </Button>
+        {todos.some((t) => t.reminder) && (
+          <Button type="button" size="sm" variant="ghost" onClick={() => save(null)}>
+            Clear
+          </Button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+/** Edits the rule of a repeating to-do (from its template or an instance) or starts one. */
 export function RepeatPicker({ id, done }: { id: Id; done(): void }) {
   const change = useChange();
   const w = useWorld();
   const todo = w.byId.get(id) as Todo | undefined;
-  const template = todo?.template ? (w.byId.get(todo.template) as Todo | undefined) : undefined;
+  const template = todo?.repeat
+    ? todo
+    : todo?.template
+      ? (w.byId.get(todo.template) as Todo | undefined)
+      : undefined;
   const [rule, setRule] = useState<Repeat>(
     template?.repeat ?? { mode: "schedule", every: 1, unit: "week" },
   );
@@ -325,8 +380,7 @@ export function RepeatPicker({ id, done }: { id: Id; done(): void }) {
       className="flex flex-col gap-2 text-ui"
       onSubmit={(e) => {
         e.preventDefault();
-        if (todo?.template) change(stopRepeating(id));
-        change(makeRepeating(id, rule));
+        change(setRepeat(id, rule));
         done();
       }}
     >
@@ -368,7 +422,7 @@ export function RepeatPicker({ id, done }: { id: Id; done(): void }) {
         <Button type="submit" size="sm" className="flex-1">
           Repeat
         </Button>
-        {todo?.template && (
+        {template && (
           <Button
             type="button"
             size="sm"

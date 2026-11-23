@@ -1,6 +1,6 @@
 import { SimplePool } from "nostr-tools/pool";
 import type { RelaySetting } from "./model";
-import type { Relays } from "./sync";
+import type { Relays } from "./nostr";
 
 export const DEFAULT_RELAYS: RelaySetting[] = [
   { url: "wss://relay.anchorman.lol", enabled: true },
@@ -37,6 +37,15 @@ export function relayPool(urls: () => string[]): Relays {
       if (!targets.length) throw new Error("No relays are enabled");
       await Promise.any(pool.publish(targets, event)).catch(() => {
         throw new Error("No relay accepted the update");
+      });
+    },
+    async check() {
+      const targets = urls();
+      if (!targets.length) throw new Error("No relays are enabled");
+      await Promise.any(
+        targets.map((url) => pool.ensureRelay(url, { connectionTimeout: 5000 })),
+      ).catch(() => {
+        throw new Error("No relay is reachable");
       });
     },
   };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combo, commandFor, startsTypeTravel } from "./keys";
+import { combo, commandFor, shortcutLabel, startsTypeTravel } from "./keys";
 
 const key = (
   k: string,
@@ -37,5 +37,16 @@ describe("shortcuts", () => {
     expect(startsTypeTravel(key("g", { metaKey: true }))).toBe(false);
     expect(startsTypeTravel(key("ArrowUp"))).toBe(false);
     expect(startsTypeTravel(key(" "))).toBe(false);
+  });
+
+  it("labels a command's shortcut the Mac way, in the modifier order menus use", () => {
+    expect(shortcutLabel("complete")).toBe("⌘K");
+    expect(shortcutLabel("cancel")).toBe("⌥⌘K");
+    expect(shortcutLabel("move")).toBe("⇧⌘M");
+    expect(shortcutLabel("newWindow")).toBe("⌃⌘N");
+    expect(shortcutLabel("trash")).toBe("⌫");
+    expect(shortcutLabel("redo")).toBe("⇧⌘Z");
+    expect(shortcutLabel("toggleSidebar")).toBe("⌃⌘S");
+    expect(shortcutLabel("go:3")).toBe("⌘3");
   });
 });
