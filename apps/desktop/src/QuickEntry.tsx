@@ -1,6 +1,7 @@
 import { ArchiveIcon, MoonIcon, StarIcon, TrayIcon } from "@phosphor-icons/react";
 import { add, placement, type Where } from "@stuff/core/ops";
 import { Button } from "@stuff/ui/components/button";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef, useState } from "react";
@@ -30,8 +31,12 @@ export function QuickEntry() {
   };
   const close = () => {
     reset();
-    void getCurrentWindow().hide();
+    void invoke("quick_entry");
   };
+  useEffect(() => {
+    document.documentElement.style.background = "transparent";
+    document.body.style.background = "transparent";
+  }, []);
   useEffect(() => {
     const off = listen("quick-entry", () => input.current?.focus());
     const blur = getCurrentWindow().onFocusChanged(
