@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @stuff/desktop tauri dev",
-    "build": "scripts/build.sh",
+    "build": "pnpm --filter @stuff/cli build && scripts/build.sh",
+    "install-cli": "scripts/install-cli.sh",
+    "e2e": "pnpm --filter @stuff/cli build && STUFF_E2E=1 pnpm --filter @stuff/cli exec vitest run src/e2e.test.ts --silent=false",
     "test": "turbo test",
     "check-types": "turbo check-types",
     "lint": "oxlint --deny-warnings",

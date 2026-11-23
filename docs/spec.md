@@ -1,18 +1,19 @@
 # stuff: spec
 
-stuff is a macOS desktop to-do app for one person on several Macs. It follows the Things 3 model and workflows (lists, areas, projects, headings, when vs deadline, This Evening, Logbook), stores everything locally first, and syncs between devices over Nostr with every object end-to-end encrypted to the user's own key.
+stuff is a macOS desktop to-do app for one person on several Macs. It follows the Things 3 model and workflows (lists, areas, projects, headings, when vs deadline, This Evening, Logbook), stores everything locally first, and syncs between devices through a sync adapter the user picks per Mac: none (the default), Nostr with every object end-to-end encrypted to the user's own key, or a folder that a cloud drive syncs. `docs/extensibility.md` covers adapters, importers, commands and the `stuff` CLI.
 
 ## Architecture
 
-- `apps/desktop`: Tauri 2 app. `src/` is the React UI; `src/app.ts` wires the core machine to Tauri (every `invoke`, `listen`, notification and URL call is injected there). `src-tauri/` is the Rust host: `lib.rs` (commands, windows, global shortcut), `vault.rs` (key, NIP-44 encryption and signing of sync events, like Keyhall's `signer.rs`), `store.rs` (SQLite store), `things.rs` (read-only reader of a Things database).
-- `packages/core`: all logic as plain TS, tested with vitest. `model.ts` (object types), `hlc.ts` (hybrid logical clock), `doc.ts` (per-field LWW documents and merge), `order.ts` (fractional indexes), `lists.ts` (Inbox, Today, Upcoming, … selectors), `repeat.ts`, `reminders.ts`, `things.ts` (Things import mapping and date decoding), `thingsUrl.ts` (hand-off URL), `backup.ts`, `sync.ts` (sync engine), `relays.ts` (the only module that talks to relays), `keys.ts` (shortcut map), `machine.ts` (XState app machine).
+- `apps/desktop`: Tauri 2 app. `src/` is the React UI; `src/app.ts` wires the core machine to Tauri (every `invoke`, `listen`, notification and URL call is injected there). `src-tauri/` is the Rust host: `lib.rs` (commands, windows, global shortcut), `vault.rs` (key, NIP-44 encryption and signing of sync events, like Keyhall's `signer.rs`), `store.rs` (SQLite store, merging writes, watching for other processes' writes), `folder.rs` (the folder adapter's file access), `things.rs` (read-only reader of a Things database).
+- `packages/core`: all logic as plain TS, tested with vitest. `model.ts` (object types), `hlc.ts` (hybrid logical clock), `doc.ts` (per-field LWW documents and merge), `order.ts` (fractional indexes), `lists.ts` (Inbox, Today, Upcoming, … selectors), `repeat.ts`, `reminders.ts`, `things.ts` (Things import mapping and date decoding), `thingsUrl.ts` (hand-off URL), `backup.ts`, `sync.ts` (adapter-agnostic sync engine), `nostr.ts` and `folder.ts` (sync adapters), `relays.ts` (the only module that talks to relays), `commands.ts` (named commands with typed arguments), `extensions.ts` (registry of commands, importers, exporters and sync adapters), `keys.ts` (shortcut map), `machine.ts` (XState app machine).
+- `packages/cli`: the `stuff` CLI, a Node program over the same store and core commands.
 - `packages/ui`: shadcn components (Base UI, Phosphor icons) and the Tailwind 4 theme, light and dark.
 
 The key is created or imported once and kept in the macOS keychain (service `app.stuff.desktop`, account `nsec`). Only Rust reads it, through `keychain_task`; the webview asks Rust to seal (encrypt + sign) and open (verify + decrypt) sync events and can't sign anything else.
 
 ## Local store
 
-SQLite in the Rust process (`rusqlite`, bundled), file `stuff.sqlite` in the app data dir. Chosen over IndexedDB because several windows (main windows, Quick Entry) share one store and the Rust side owns it, notifies every window of changes (`store-changed`), survives webview storage resets, and can be backed up as one file. Tables: `objects(id, doc, dirty)` and `meta(key, value)` (last sync time, node id).
+SQLite in the Rust process (`rusqlite`, bundled), file `stuff.sqlite` in the app data dir. Chosen over IndexedDB because several windows (main windows, Quick Entry) share one store and the Rust side owns it, notifies every window of changes (`store-changed`), survives webview storage resets, and can be backed up as one file. Tables: `objects(id, doc, dirty, rev)` and `meta(key, value)` (`sync` = this Mac's adapter choice, `cursor:<adapter key>` = how far it has read). The store is WAL with a busy timeout; every write is an immediate transaction that merges each document with the stored one per field, so the CLI and the app can write concurrently. The app polls `PRAGMA data_version` and emits `store-changed` for documents other processes wrote.
 
 The store holds documents, not rows: the webview loads all documents at start (a personal to-do list is thousands of objects, not millions), edits them in memory through `core/doc.ts` and writes changed documents back.
 
@@ -45,7 +46,9 @@ Pure selectors in `core/lists.ts`, given today's date:
 - **Repeating**: a hidden template carries the rule and the next date; `spawnDue` creates each instance on its day with an id derived from template id + date, so two Macs create the same object. After-completion templates get their next date when the instance is completed.
 - **Trash**: trashed.
 
-## Sync event format
+## Nostr event format
+
+The folder adapter writes the same document JSON (plain) or this same sealed event (encrypted), one `<id>.json` per object.
 
 Each document is one NIP-78 kind 30078 parameterized replaceable event:
 
@@ -70,7 +73,8 @@ What still leaks to relays: the author pubkey, that it uses stuff, the number of
 - `deleted` is sticky: once a tombstone, always a tombstone.
 - After merging a remote document, if the local result differs from what came in (we had newer fields), the object stays dirty and is republished, so the relay copy converges even when two devices replaced each other's event.
 - An event's `created_at` is `max(now, last seen created_at for that d + 1)`, so a device with a slow clock still replaces the relay copy.
-- Sync loop: publish dirty documents (debounced), subscribe to `{kinds:[30078], authors:[me], #t:[stuff], since: lastSync - 10 min}`, merge what arrives, store `lastSync`.
+- Sync loop (any adapter): push dirty documents (debounced), watch the remote from the stored cursor, merge what arrives, store the cursor. A remote with no cursor yet gets every document once. Nostr subscribes to `{kinds:[30078], authors:[me], #t:[stuff], since: cursor - 10 min}`; Folder polls the folder every 5 s.
+- Status is "synced" only when the last push succeeded and the remote answered a reachability check.
 
 ## Things interop
 
