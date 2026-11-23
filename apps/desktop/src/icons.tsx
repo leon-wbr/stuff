@@ -12,12 +12,12 @@ import {
 import type { View } from "@stuff/core/machine";
 
 export const LIST_ICONS = {
-  inbox: { Icon: TrayIcon, color: "text-sky-600 dark:text-sky-400" },
+  inbox: { Icon: TrayIcon, color: "text-inbox" },
   today: { Icon: StarIcon, color: "text-today" },
-  upcoming: { Icon: CalendarDotsIcon, color: "text-rose-600 dark:text-rose-400" },
+  upcoming: { Icon: CalendarDotsIcon, color: "text-upcoming" },
   anytime: { Icon: StackIcon, color: "text-primary" },
   someday: { Icon: ArchiveIcon, color: "text-someday" },
-  logbook: { Icon: BookOpenIcon, color: "text-emerald-700 dark:text-emerald-400" },
+  logbook: { Icon: BookOpenIcon, color: "text-logbook" },
   trash: { Icon: TrashIcon, color: "text-muted-foreground" },
 } as const;
 

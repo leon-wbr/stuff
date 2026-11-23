@@ -8,6 +8,7 @@
     "build": "pnpm --filter @stuff/cli build && scripts/build.sh",
     "install-cli": "scripts/install-cli.sh",
     "e2e": "pnpm --filter @stuff/cli build && STUFF_E2E=1 pnpm --filter @stuff/cli exec vitest run src/e2e.test.ts --silent=false",
+    "design": "pnpm --filter @stuff/playground build --outDir \"${DESIGN_OUT:-$HOME/work/reports/stuff/design}\"",
     "test": "turbo test",
     "check-types": "turbo check-types",
     "lint": "oxlint --deny-warnings",

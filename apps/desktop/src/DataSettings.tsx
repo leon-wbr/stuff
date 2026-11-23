@@ -46,7 +46,7 @@ function Sync() {
         ))}
       </div>
       {config.adapter === "off" && (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-ui text-muted-foreground">
           Everything stays on this Mac. Choose Nostr or a folder (in iCloud Drive, Google Drive,
           Dropbox or a Syncthing share) to use stuff on several Macs.
         </p>
@@ -59,12 +59,12 @@ function Sync() {
       )}
       {config.adapter === "folder" && (
         <>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-ui text-muted-foreground">
             Each item is one file in{" "}
             <span className="selectable font-mono text-xs break-all">{config.path}</span>. Point
             your other Macs at the same folder.
           </p>
-          <div className="flex items-center gap-2 text-[13px]">
+          <div className="flex items-center gap-2 text-ui">
             <Switch
               checked={!!config.encrypt}
               onCheckedChange={(encrypt) => void setSyncConfig({ ...config, encrypt })}
@@ -92,13 +92,13 @@ function Relays() {
   const save = (next: typeof relays) => change(saveSettings({ relays: next }));
   return (
     <>
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-ui text-muted-foreground">
         Each to-do, project and list is encrypted to your key and stored on these relays. They see
         when you change something and how many items you have, never what they say.
       </p>
       <ul className="flex flex-col gap-1">
         {relays.map((r) => (
-          <li key={r.url} className="flex items-center gap-2 text-[13px]">
+          <li key={r.url} className="flex items-center gap-2 text-ui">
             <Switch
               checked={r.enabled}
               onCheckedChange={() =>
@@ -139,7 +139,7 @@ function Relays() {
           Add
         </Button>
       </form>
-      {error && <p className="text-[13px] text-destructive">{error}</p>}
+      {error && <p className="text-ui text-destructive">{error}</p>}
     </>
   );
 }
@@ -162,7 +162,7 @@ function ThingsImport() {
   const counts = data && thingsCounts(data, today);
   return (
     <Section title="Import from Things">
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-ui text-muted-foreground">
         Choose a <code>main.sqlite</code> from a Things backup (inside a{" "}
         <code>.thingsdatabase</code> folder). stuff only reads it.
       </p>
@@ -183,12 +183,12 @@ function ThingsImport() {
         )}
       </div>
       {counts && (
-        <p className="text-[13px]" data-testid="things-counts">
+        <p className="text-ui" data-testid="things-counts">
           {counts.areas} areas, {counts.projects} projects ({counts.openProjects} open),{" "}
           {counts.todos} to-dos, {counts.today} in Today, {counts.inbox} in the Inbox.
         </p>
       )}
-      {message && <p className="text-[13px] text-muted-foreground">{message}</p>}
+      {message && <p className="text-ui text-muted-foreground">{message}</p>}
     </Section>
   );
 }
@@ -230,7 +230,7 @@ function Backup() {
           Restore…
         </Button>
       </div>
-      {message && <p className="text-[13px] text-muted-foreground">{message}</p>}
+      {message && <p className="text-ui text-muted-foreground">{message}</p>}
     </Section>
   );
 }

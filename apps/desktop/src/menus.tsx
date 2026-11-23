@@ -27,7 +27,7 @@ export type Target =
   | { kind: "heading"; id: Id }
   | { kind: "view"; view: View };
 
-const ITEM = "gap-2 rounded-md px-2 py-1 text-[13px] font-normal";
+const ITEM = "gap-2 rounded-md px-2 py-1 text-ui font-normal";
 
 function Item(props: {
   children: ReactNode;
@@ -401,7 +401,7 @@ export function TargetMenu({
       />
     ) : null;
   return (
-    <ContextMenuContent className="min-w-56 rounded-xl p-1 text-[13px]">
+    <ContextMenuContent className="min-w-56 rounded-xl p-1 text-ui">
       {content}
     </ContextMenuContent>
   );

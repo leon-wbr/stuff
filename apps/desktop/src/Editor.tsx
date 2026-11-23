@@ -62,7 +62,7 @@ export function Notes({
     return (
       <div
         onClick={(e) => (e.target as HTMLElement).tagName !== "A" && setEditing(true)}
-        className="cursor-text text-[13px] leading-relaxed"
+        className="cursor-text text-ui leading-relaxed"
       >
         <Markdown text={notes} />
       </div>
@@ -78,7 +78,7 @@ export function Notes({
       onKeyDown={(e) => e.key === "Escape" && (e.target as HTMLTextAreaElement).blur()}
       placeholder={placeholder}
       rows={Math.max(2, draft.value.split("\n").length)}
-      className="w-full resize-none bg-transparent text-[13px] leading-relaxed outline-none placeholder:text-muted-foreground/60"
+      className="w-full resize-none bg-transparent text-ui leading-relaxed outline-none placeholder:text-muted-foreground/60"
     />
   );
 }
@@ -215,7 +215,7 @@ function ChecklistTitle(props: {
         }
         if (e.key === "Backspace" && !draft.value) props.onRemove();
       }}
-      className={`flex-1 bg-transparent text-[13px] outline-none ${props.done ? "text-muted-foreground line-through" : ""}`}
+      className={`flex-1 bg-transparent text-ui outline-none ${props.done ? "text-muted-foreground line-through" : ""}`}
     />
   );
 }
@@ -247,7 +247,7 @@ export function Editor({ task, w, today }: { task: Task; w: World; today: Day })
           send({ type: "edit", id: null });
         }
       }}
-      className="my-2 flex flex-col gap-2 rounded-xl bg-card px-3 py-3 shadow-[0_1px_4px_rgb(0_0_0/0.08),0_0_0_1px_var(--border)]"
+      className="my-2 flex flex-col gap-2 rounded-xl bg-card px-3 py-3 shadow-editor"
     >
       <div className="flex items-center gap-2.5">
         <Checkbox task={task} onToggle={() => change(setStatus([task.id], "completed"))} />

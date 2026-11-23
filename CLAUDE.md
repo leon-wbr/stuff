@@ -8,7 +8,8 @@ A macOS to-do app in the spirit of Things 3: local-first, optionally synced betw
 - `apps/desktop/src-tauri`: Rust host. `lib.rs` holds commands, windows (main windows `main`, `main-N`; Quick Entry `quick`) and the Ctrl+Space global shortcut; `vault.rs` seals (NIP-44 encrypt to self + sign kind 30078) and opens sync events; `store.rs` is the SQLite store (merging writes, `external_changes` for CLI writes); `folder.rs` is the folder adapter's file access; `things.rs` reads a Things database read-only.
 - `packages/core`: all logic as plain TS, exported raw (`@stuff/core/<file>`). `doc.ts` (per-field LWW documents), `hlc.ts`, `lists.ts` (Inbox, Today, … selectors), `ops.ts` (edits as `Op`s returning changed documents), `actions.ts` (chain, duplicate, reopen, convert to project, copy as text), `undo.ts` (undo entries and revert), `repeat.ts`, `reminders.ts`, `things.ts` (import), `thingsUrl.ts` (hand-off), `backup.ts`, `sync.ts` (adapter-agnostic engine, `SyncAdapter`), `nostr.ts` / `folder.ts` (adapters), `relays.ts` (the only module that talks to relays), `commands.ts` (named commands the CLI, shortcuts and menus dispatch), `extensions.ts` (registry of commands, importers, exporters, sync adapters), `keys.ts` (shortcut map), `search.ts` (Quick Find), `machine.ts` (XState app machine).
 - `packages/cli`: the `stuff` CLI (Node, `node:sqlite`), bundled to `dist/stuff.mjs` by Vite; `scripts/install-cli.sh` links it into `~/.local/bin`.
-- `packages/ui`: shadcn components (Base UI, Phosphor icons) and the Tailwind 4 theme, light and dark (`.dark` on `<html>`).
+- `packages/ui`: shadcn components (Base UI, Phosphor icons) and the Tailwind 4 theme, light and dark (`.dark` on `<html>`). Colours, fonts, type sizes, row height, sidebar width, checkbox shape and shadows are CSS variables in `globals.css`; use their utilities (`text-ui`, `text-meta`, `text-title`, `font-display`, `min-h-(--row-height)`, `text-inbox`, …) rather than literal values.
+- `apps/playground`: the design playground. It renders the real desktop `App` in iframes (Tauri IPC stubbed in `tauri.ts`, synthetic data from `seed.ts`) next to a panel that edits the theme variables live; `tokens.ts` mirrors the variables in `globals.css` and `presets.ts` holds the named presets. Builds to one self-contained `index.html` that works from file://.
 
 ## Architecture
 
@@ -22,13 +23,15 @@ A macOS to-do app in the spirit of Things 3: local-first, optionally synced betw
 ```sh
 pnpm install
 pnpm dev          # tauri dev (Vite on :1430, strict port)
-pnpm test         # vitest via turbo (packages/core, packages/cli)
+pnpm test         # vitest via turbo (packages/core, packages/cli, apps/playground)
 pnpm e2e          # folder/Nostr/CLI end to end (STUFF_E2E_RELAY=ws://… for Nostr)
 pnpm install-cli  # build the CLI, link ~/.local/bin/stuff
+pnpm design       # design playground, one HTML file
 pnpm check-types  # tsc (TypeScript 7) via turbo
 pnpm lint         # oxlint --deny-warnings
 pnpm fmt          # oxfmt; fmt:check to verify
 pnpm build        # tauri build → stuff.app
+pnpm design       # design playground → ~/work/reports/stuff/design/index.html (DESIGN_OUT to override)
 pnpm gate         # lint, fmt:check, check-types, test, cargo test, build
 ```
 
@@ -43,6 +46,7 @@ pnpm gate         # lint, fmt:check, check-types, test, cargo test, build
 
 ## Gotchas
 
+- **A new theme variable** goes in `globals.css` (`:root`, `.dark` if it differs, and `@theme inline` for a utility) and in `apps/playground/src/tokens.ts` (`BASE` plus a control), or the playground can't tweak it.
 - **A new Tauri command needs three edits:** `src-tauri/build.rs`, `generate_handler!` in `lib.rs`, and `allow-<command>` in `capabilities/main.json`.
 - Store writes always emit `store-changed`, including to the window that wrote; merging is idempotent, so that's fine.
 - Fractional indexes compare with `<`, never `localeCompare`.

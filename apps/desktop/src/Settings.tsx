@@ -32,14 +32,14 @@ export function KeySetup() {
   const { send } = Stuff.useActorRef();
   if (npub)
     return (
-      <p className="text-[13px]">
+      <p className="text-ui">
         Your key:{" "}
         <span className="selectable font-mono text-xs break-all text-muted-foreground">{npub}</span>
       </p>
     );
   return (
     <>
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-ui text-muted-foreground">
         stuff keeps your Nostr key in the macOS keychain and encrypts every to-do to it before it
         leaves this Mac. Use the same key on each Mac you sync.
       </p>
@@ -63,7 +63,7 @@ export function KeySetup() {
           Import
         </Button>
       </div>
-      {keyError && <p className="text-[13px] text-destructive">{keyError}</p>}
+      {keyError && <p className="text-ui text-destructive">{keyError}</p>}
     </>
   );
 }

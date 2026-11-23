@@ -53,7 +53,7 @@ export function QuickFind() {
       <TagIcon className="size-4 text-muted-foreground" />
     ) : (
       <span
-        className={`size-3.5 rounded-[4px] border-[1.5px] ${hit.done ? "border-primary bg-primary" : "border-muted-foreground/45"}`}
+        className={`size-3.5 rounded-(--checkbox-radius) border-[1.5px] ${hit.done ? "border-primary bg-primary" : "border-muted-foreground/45"}`}
       />
     );
 
@@ -89,7 +89,7 @@ export function QuickFind() {
           <ul
             role="listbox"
             aria-label="Results"
-            className="max-h-80 overflow-y-auto p-1.5 text-[13px]"
+            className="max-h-80 overflow-y-auto p-1.5 text-ui"
           >
             {hits.map((hit, i) => (
               <li

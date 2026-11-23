@@ -57,4 +57,5 @@ pnpm install
 pnpm dev
 pnpm gate
 pnpm e2e    # folder + CLI end to end; STUFF_E2E_RELAY=ws://… adds Nostr
+pnpm design   # design playground: the real UI with live theme controls, one HTML file
 ```

@@ -36,10 +36,10 @@ export function Checkbox({
         e.stopPropagation();
         onToggle();
       }}
-      className={`grid size-[15px] shrink-0 place-items-center rounded-[4px] border-[1.5px] transition-colors ${
+      className={`grid size-(--checkbox-size) shrink-0 place-items-center rounded-(--checkbox-radius) border-[1.5px] transition-colors ${
         done
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-muted-foreground/45 hover:border-primary"
+          ? "border-checkbox bg-checkbox text-primary-foreground"
+          : "border-checkbox-border hover:border-checkbox"
       }`}
     >
       {task.status === "completed" && (
@@ -108,7 +108,7 @@ export function Row({
       onDragStart={onDragStart}
       onMouseDown={onSelect}
       onDoubleClick={onOpen}
-      className={`group flex min-h-[30px] items-center gap-2.5 rounded-md px-2 py-[5px] ${selected ? "bg-selected" : "hover:bg-muted/70"}`}
+      className={`group flex min-h-(--row-height) items-center gap-2.5 rounded-md px-2 py-[5px] ${selected ? "bg-selected" : "hover:bg-muted/70"}`}
     >
       {task.type === "project" ? (
         <button type="button" aria-label="Open project" onClick={onOpen} className="shrink-0">
@@ -137,7 +137,7 @@ export function Row({
         />
       )}
       {showWhen && (
-        <span className="shrink-0 rounded bg-muted px-1.5 text-[11px] text-muted-foreground">
+        <span className="shrink-0 rounded bg-muted px-1.5 text-meta text-muted-foreground">
           {dayLabel(task.when!, today)}
         </span>
       )}
@@ -159,28 +159,28 @@ export function Row({
         <NoteIcon className="size-3 shrink-0 text-muted-foreground" aria-label="Notes" />
       )}
       {checklist.length > 0 && (
-        <span className="flex shrink-0 items-center gap-0.5 text-[11px] text-muted-foreground">
+        <span className="flex shrink-0 items-center gap-0.5 text-meta text-muted-foreground">
           <ListChecksIcon className="size-3" />
           {checklist.filter((c) => c.done).length}/{checklist.length}
         </span>
       )}
       <span className="flex-1" />
       {context !== "project" && parent && "title" in parent && (
-        <span className="max-w-40 shrink-0 truncate text-[11px] text-muted-foreground">
+        <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
           {parent.title}
         </span>
       )}
       {tags.map((t) => (
         <span
           key={t!.id}
-          className="shrink-0 rounded-full border px-1.5 text-[11px] text-muted-foreground"
+          className="shrink-0 rounded-full border px-1.5 text-meta text-muted-foreground"
         >
           {"title" in t! ? t.title : ""}
         </span>
       ))}
       {task.deadline && !done && (
         <span
-          className={`flex shrink-0 items-center gap-1 text-[11px] ${task.deadline <= today ? "text-deadline" : "text-muted-foreground"}`}
+          className={`flex shrink-0 items-center gap-1 text-meta ${task.deadline <= today ? "text-deadline" : "text-muted-foreground"}`}
         >
           <FlagIcon weight="fill" className="size-3" />
           {deadlineLabel(task.deadline, today)}
