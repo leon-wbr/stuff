@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { list, progress, withTag, worldOf } from "./lists";
+import { areaProjects, childTags, list, progress, withTag, worldOf } from "./lists";
 import { DEFAULTS, type Item } from "./model";
 
 const TODAY = "2026-11-23";
@@ -133,5 +133,29 @@ describe("lists", () => {
       todo({ title: "b", tags: [] }),
     ]);
     expect(titles(withTag(list(w, "inbox", TODAY), w, "work"))).toEqual([["a"]]);
+  });
+
+  it("nests open projects under their area and child tags under their parent", () => {
+    const tag = (id: string, parent: string | null, f: Partial<Item> = {}) =>
+      ({ ...DEFAULTS.tag, id, type: "tag", title: id, parent, ...f }) as Item;
+    const w = worldOf([
+      { ...DEFAULTS.area, id: "home", type: "area", title: "Home" } as Item,
+      { ...DEFAULTS.area, id: "empty", type: "area", title: "Empty" } as Item,
+      project({ id: "paint", area: "home" }),
+      project({ id: "done", area: "home", status: "completed" }),
+      project({ id: "gone", area: "empty", trashed: true }),
+      project({ id: "loose" }),
+      tag("work", null),
+      tag("calls", "work"),
+      tag("old", "work", { trashed: true }),
+      tag("leaf", null),
+    ]);
+    const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
+    expect(ids(areaProjects(w, "home"))).toEqual(["paint"]);
+    expect(ids(areaProjects(w, "empty"))).toEqual([]);
+    expect(ids(areaProjects(w, null))).toEqual(["loose"]);
+    expect(ids(childTags(w, null))).toEqual(["work", "leaf"]);
+    expect(ids(childTags(w, "work"))).toEqual(["calls"]);
+    expect(ids(childTags(w, "leaf"))).toEqual([]);
   });
 });

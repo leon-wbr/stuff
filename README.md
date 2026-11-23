@@ -5,10 +5,10 @@ A calm to-do app for the Mac. Inbox, Today and This Evening, Upcoming, Anytime, 
 ## Using it
 
 - **Quick Entry**: Ctrl+Space from anywhere.
-- **Keyboard**: ⌘N new to-do, Space new to-do below, ⌥⌘N new project, ⇧⌘N new heading, ⌘K complete, ⌥⌘K cancel, ⌘T Today, ⌘E This Evening, ⌘R Anytime, ⌘O Someday, ⌘S When, ⇧⌘D deadline, ⇧⌘M move, ⇧⌘T tags, ⇧⌘C checklist, ⇧⌘R repeat, ⌘D duplicate, ⌘Z undo, ⇧⌘Z redo, ⌃⌘S hide the sidebar, ⌘F Quick Find, ⌘1–⌘7 lists, ⌃⌘N new window, ⇧⌘S send to Things. Start typing anywhere to jump to a list or to-do (Type Travel).
+- **Keyboard**: ⌘N new to-do, Space new to-do below, ⌥⌘N new project, ⇧⌘N new heading, ⌘K complete, ⌥⌘K cancel, ⌘T Today, ⌘E This Evening, ⌘R Anytime, ⌘O Someday, ⌘S When, ⇧⌘D deadline, ⇧⌘M move, ⇧⌘T tags, ⇧⌘C checklist, ⇧⌘R repeat, ⌘D duplicate, ⌘Z undo, ⇧⌘Z redo, ⌃⌘S hide the sidebar, ⌘F Quick Find, ⌘1–⌘7 lists, ⌃⌘N new window. Start typing anywhere to jump to a list or to-do (Type Travel).
 - **Right-click** anything (to-dos, a selection, projects, areas, headings, sidebar lists) for its actions; each shows its shortcut.
 - **Drag** to-dos to reorder them or onto a list in the sidebar to move them; drag the + button to put a new to-do exactly where you want it.
-- **Things**: Settings → Import from Things reads a `main.sqlite` from a Things backup (read-only). "Send to Things" hands selected to-dos or a whole project to Things through its URL scheme.
+- **Things**: Settings → Import from Things reads a `main.sqlite` from a Things backup (read-only). Share ▸ Copy Things Link copies selected to-dos or a whole project as a Things URL to paste into Things.
 - **Backup**: Settings → Backup exports and restores stuff's own JSON.
 
 ## Sync and privacy

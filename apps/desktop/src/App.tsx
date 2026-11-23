@@ -51,7 +51,7 @@ function Main() {
   const { sidebar } = usePanel();
   return (
     <div
-      className={`grid h-screen text-ui ${sidebar ? "grid-cols-[var(--sidebar-width)_minmax(0,1fr)]" : "grid-cols-[minmax(0,1fr)]"}`}
+      className={`grid h-screen text-ui ${sidebar ? "grid-cols-[var(--sidebar-user-width,var(--sidebar-width))_minmax(0,1fr)]" : "grid-cols-[minmax(0,1fr)]"}`}
     >
       {sidebar && <Sidebar />}
       <main className="min-h-0 min-w-0">

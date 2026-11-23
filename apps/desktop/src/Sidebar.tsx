@@ -6,18 +6,18 @@ import {
   PlusIcon,
   TagIcon,
 } from "@phosphor-icons/react";
-import { inToday, list, progress, type World } from "@stuff/core/lists";
+import { areaProjects, childTags, inToday, list, progress, type World } from "@stuff/core/lists";
 import type { View } from "@stuff/core/machine";
 import type { Id } from "@stuff/core/model";
 import { add, moveTo, set, setStatus, trash, type Op, type Where } from "@stuff/core/ops";
 import { BUILT_IN } from "@stuff/core/search";
 import { ContextMenu, ContextMenuTrigger } from "@stuff/ui/components/context-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@stuff/ui/components/popover";
-import { useState, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useState, type ReactNode } from "react";
 import { Stuff, useChange, useWorld, windowLabel } from "./app.ts";
 import { ProgressRing, ViewIcon } from "./icons.tsx";
 import { DRAG_TYPE } from "./ListView.tsx";
-import { TargetMenu, useCollapsedAreas, type Target } from "./menus.tsx";
+import { TargetMenu, useCollapsed, type Target } from "./menus.tsx";
 import { usePanel } from "./ui.tsx";
 import { useSyncStatus } from "./sync.ts";
 
@@ -102,6 +102,75 @@ function Item({
 
 const to = (where: Where) => (ids: Id[]) => moveTo(ids, where);
 
+const Caret = ({ open }: { open: boolean }) =>
+  open ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />;
+
+/** The chevron that collapses what's nested under an area or a parent tag. */
+function Disclosure({ id, label }: { id: Id; label: string }) {
+  const { collapsed, toggle } = useCollapsed();
+  const open = !collapsed.has(id);
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-label={`${open ? "Collapse" : "Expand"} ${label}`}
+      onClick={() => toggle(id)}
+      className={`absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-sidebar-accent focus-visible:opacity-100 ${open ? "opacity-0 group-hover/item:opacity-100" : ""}`}
+    >
+      <Caret open={open} />
+    </button>
+  );
+}
+
+const TAGS = "tags";
+const MIN_WIDTH = 180;
+const MAX_WIDTH = 400;
+const WIDTH_KEY = `sidebar-width:${windowLabel}`;
+const clampWidth = (px: number) => Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, px)));
+const themeWidth = () =>
+  parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sidebar-width"));
+
+/** Drag, arrow keys or double-click (back to the theme's width) on the sidebar's right edge. */
+function ResizeHandle() {
+  const [width, setWidth] = useState(() => Number(localStorage.getItem(WIDTH_KEY)) || null);
+  useLayoutEffect(() => {
+    const root = document.documentElement.style;
+    if (width) {
+      root.setProperty("--sidebar-user-width", `${width}px`);
+      localStorage.setItem(WIDTH_KEY, String(width));
+    } else {
+      root.removeProperty("--sidebar-user-width");
+      localStorage.removeItem(WIDTH_KEY);
+    }
+  }, [width]);
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize Sidebar"
+      aria-valuemin={MIN_WIDTH}
+      aria-valuemax={MAX_WIDTH}
+      aria-valuenow={width ?? themeWidth()}
+      tabIndex={0}
+      onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+      onPointerMove={(e) => {
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        const left = e.currentTarget.parentElement!.getBoundingClientRect().left;
+        setWidth(clampWidth(e.clientX - left));
+      }}
+      onDoubleClick={() => setWidth(null)}
+      onKeyDown={(e) => {
+        const step = { ArrowLeft: -8, ArrowRight: 8 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setWidth(clampWidth((width ?? themeWidth()) + step * (e.shiftKey ? 4 : 1)));
+      }}
+      className="absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize outline-none hover:bg-primary/20 focus-visible:bg-primary/40"
+    />
+  );
+}
+
 export function Sidebar() {
   const w: World = useWorld();
   const today = Stuff.useSelector((s) => s.context.today);
@@ -111,7 +180,7 @@ export function Sidebar() {
   const sync = useSyncStatus();
   const [target, setTarget] = useState<Target | null>(null);
   const [renaming, setRenaming] = useState<Id | null>(null);
-  const { collapsed, toggle } = useCollapsedAreas();
+  const { collapsed, toggle } = useCollapsed();
   const rename = (id: Id) => (title: string | null) => {
     setRenaming(null);
     if (title !== null && title !== (w.byId.get(id) as { title?: string } | undefined)?.title)
@@ -131,29 +200,45 @@ export function Sidebar() {
     trash: (ids) => trash(ids),
   };
   const projects = (area: Id | null) =>
-    w.projects
-      .filter((p) => p.area === area && p.status === "open" && !p.trashed)
-      .map((p) => (
-        <Item
-          key={p.id}
-          view={`project:${p.id}`}
-          icon={<ProgressRing {...progress(w, p.id)} />}
-          label={p.title || "New Project"}
-          drop={to(`project:${p.id}`)}
-          indent={!!area}
-          renaming={renaming === p.id}
-          onRenamed={rename(p.id)}
-        />
-      ));
+    areaProjects(w, area).map((p) => (
+      <Item
+        key={p.id}
+        view={`project:${p.id}`}
+        icon={<ProgressRing {...progress(w, p.id)} />}
+        label={p.title || "New Project"}
+        drop={to(`project:${p.id}`)}
+        indent={!!area}
+        renaming={renaming === p.id}
+        onRenamed={rename(p.id)}
+      />
+    ));
   const create = (type: "project" | "area") =>
     change((ctx) => {
       const docs = add(type, { title: "" }, type === "project" ? "anytime" : undefined)(ctx);
       queueMicrotask(() => send({ type: "view", view: `${type}:${docs[0]!.id}` }));
       return docs;
     });
-  const topTags = w.tags.filter((t) => !t.parent);
+  const tags = (parent: Id | null): ReactNode =>
+    childTags(w, parent).map((t) => {
+      const nested = childTags(w, t.id).length > 0;
+      return (
+        <Fragment key={t.id}>
+          <Item
+            view={`tag:${t.id}`}
+            icon={<TagIcon className="size-3.5 text-muted-foreground" />}
+            label={t.title}
+            indent={!!parent}
+            renaming={renaming === t.id}
+            onRenamed={rename(t.id)}
+            disclosure={nested && <Disclosure id={t.id} label={t.title} />}
+          />
+          {nested && !collapsed.has(t.id) && tags(t.id)}
+        </Fragment>
+      );
+    });
+  const tagsOpen = !collapsed.has(TAGS);
   return (
-    <aside className="flex min-h-0 flex-col border-r bg-sidebar text-ui">
+    <aside className="relative flex min-h-0 flex-col border-r bg-sidebar text-ui">
       <div data-tauri-drag-region className="h-12 shrink-0" />
       <ContextMenu>
         <ContextMenuTrigger
@@ -191,43 +276,34 @@ export function Sidebar() {
                   renaming={renaming === a.id}
                   onRenamed={rename(a.id)}
                   disclosure={
-                    <button
-                      type="button"
-                      aria-expanded={!collapsed.has(a.id)}
-                      aria-label={`${collapsed.has(a.id) ? "Expand" : "Collapse"} ${a.title || "New Area"}`}
-                      onClick={() => toggle(a.id)}
-                      className={`absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-sidebar-accent focus-visible:opacity-100 ${collapsed.has(a.id) ? "" : "opacity-0 group-hover/item:opacity-100"}`}
-                    >
-                      {collapsed.has(a.id) ? (
-                        <CaretRightIcon className="size-3" />
-                      ) : (
-                        <CaretDownIcon className="size-3" />
-                      )}
-                    </button>
+                    areaProjects(w, a.id).length > 0 && (
+                      <Disclosure id={a.id} label={a.title || "New Area"} />
+                    )
                   }
                 />
                 {!collapsed.has(a.id) && projects(a.id)}
               </div>
             ))}
-          {topTags.length > 0 && (
+          {childTags(w, null).length > 0 && (
             <div className="mt-4">
-              <p className="px-2 pb-1 text-meta font-medium text-muted-foreground">Tags</p>
-              {w.tags.map((t) => (
-                <Item
-                  key={t.id}
-                  view={`tag:${t.id}`}
-                  icon={<TagIcon className="size-3.5 text-muted-foreground" />}
-                  label={t.title}
-                  indent={!!t.parent}
-                  renaming={renaming === t.id}
-                  onRenamed={rename(t.id)}
-                />
-              ))}
+              <button
+                type="button"
+                aria-expanded={tagsOpen}
+                onClick={() => toggle(TAGS)}
+                className="group/tags flex w-full items-center gap-1 rounded-md px-2 pb-1 text-meta font-medium text-muted-foreground hover:text-foreground"
+              >
+                Tags
+                <span className={tagsOpen ? "opacity-0 group-hover/tags:opacity-100" : ""}>
+                  <Caret open={tagsOpen} />
+                </span>
+              </button>
+              {tagsOpen && tags(null)}
             </div>
           )}
         </ContextMenuTrigger>
         <TargetMenu target={target} onRename={setRenaming} />
       </ContextMenu>
+      <ResizeHandle />
       <div className="flex shrink-0 items-center gap-1 border-t px-2.5 py-2">
         <Popover>
           <PopoverTrigger className="flex flex-1 items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground hover:bg-sidebar-accent">

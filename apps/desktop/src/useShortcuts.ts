@@ -8,7 +8,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef } from "react";
 import { Stuff, useChange, useWorld } from "./app.ts";
 import { sectionsFor, whereFor } from "./ListView.tsx";
-import { sendToThings } from "./things.ts";
 import { usePanel } from "./ui.tsx";
 
 const typing = (el: EventTarget | null) =>
@@ -105,7 +104,6 @@ export function useCommands() {
         moveUp: () => move(-1),
         moveDown: () => move(1),
         find: () => open({ kind: "find", query: "" }),
-        sendToThings: () => any && sendToThings(w, ids),
         undo: () => actor.send({ type: "undo" }),
         redo: () => actor.send({ type: "redo" }),
         toggleSidebar,

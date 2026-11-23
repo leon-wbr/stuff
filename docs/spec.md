@@ -79,5 +79,5 @@ What still leaks to relays: the author pubkey, that it uses stuff, the number of
 ## Things interop
 
 - **Import** reads `main.sqlite` read-only in Rust (`things.rs`, `SELECT` of the known columns) and maps rows in `core/things.ts`. Dates: `startDate` and `deadline` are packed integers (`year << 16 | month << 12 | day << 7`), `reminderTime` packs `hour << 26 | minute << 20`, `creationDate`/`stopDate` are Unix seconds. `start` 0/1/2 is Inbox/Anytime/Someday, `startBucket` 1 is This Evening, `status` 0/2/3 is open/canceled/completed, `type` 0/1/2 is to-do/project/heading. Repeating templates carry a plist rule (`fu` unit, `fa` amount, `tp` 0 fixed / 1 after completion), which becomes the repeat rule of the template's open instance. New random ids replace Things' uuids.
-- **Hand-off** builds `things:///json?data=…` (Things' JSON URL scheme) for selected to-dos or a whole project.
+- **Hand-off** builds `things:///json?data=…` (Things' JSON URL scheme) for selected to-dos or a whole project, copied by Share ▸ Copy Things Link.
 - **Backup** exports and imports stuff's documents as JSON.

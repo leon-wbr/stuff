@@ -26,7 +26,6 @@ export type Command =
   | "moveUp"
   | "moveDown"
   | "find"
-  | "sendToThings"
   | "repeat"
   | "undo"
   | "redo"
@@ -63,7 +62,6 @@ export const SHORTCUTS: Record<string, Command> = {
   "Mod+ArrowUp": "moveUp",
   "Mod+ArrowDown": "moveDown",
   "Mod+F": "find",
-  "Mod+Shift+S": "sendToThings",
   "Mod+Shift+R": "repeat",
   "Mod+Z": "undo",
   "Mod+Shift+Z": "redo",

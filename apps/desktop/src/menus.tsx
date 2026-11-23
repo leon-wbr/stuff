@@ -1,6 +1,6 @@
 import { asText, convertToProject, reopen } from "@stuff/core/actions";
 import { shortcutLabel, type Command } from "@stuff/core/keys";
-import type { Task, World } from "@stuff/core/lists";
+import { areaProjects, childTags, type Task, type World } from "@stuff/core/lists";
 import type { View } from "@stuff/core/machine";
 import type { Id } from "@stuff/core/model";
 import { add, emptyTrash, moveTo, set, trash, type Where } from "@stuff/core/ops";
@@ -111,15 +111,11 @@ function WhenItems({ ids }: { ids: Id[] }) {
 
 function ShareItems({ ids }: { ids: Id[] }) {
   const w = useWorld();
-  const perform = useCommands();
   const today = Stuff.useSelector((s) => s.context.today);
   return (
     <Sub label="Share">
       <Item onClick={() => copy(asText(w, ids))}>Copy as Text</Item>
       <Item onClick={() => copy(thingsUrl(w, ids, today))}>Copy Things Link</Item>
-      <Item onClick={() => perform("sendToThings", ids)} shortcut="sendToThings">
-        Send to Things
-      </Item>
     </Sub>
   );
 }
@@ -275,7 +271,7 @@ function AreaItems({ id, onRename }: { id: Id; onRename?(): void }) {
   const { send } = Stuff.useActorRef();
   const change = useChange();
   const newTodo = useNewTodo();
-  const { collapsed, toggle } = useCollapsedAreas();
+  const w = useWorld();
   return (
     <>
       <Item onClick={() => newTodo(`area:${id}`, `area:${id}`)}>New To-Do in Area</Item>
@@ -292,7 +288,7 @@ function AreaItems({ id, onRename }: { id: Id; onRename?(): void }) {
       </Item>
       <Separator />
       {onRename && <Item onClick={onRename}>Rename</Item>}
-      <Item onClick={() => toggle(id)}>{collapsed.has(id) ? "Expand" : "Collapse"}</Item>
+      <CollapseItem id={id} nested={areaProjects(w, id).length > 0} />
       <Separator />
       <Item
         destructive
@@ -355,6 +351,7 @@ function ViewItems({ view, onRename }: { view: View; onRename?(): void }) {
         <Item onClick={() => newTodo("anytime", view, { tags: [id] })}>
           New To-Do Tagged “{titleOf(w, id)}”
         </Item>
+        <CollapseItem id={id} nested={childTags(w, id).length > 0} />
       </>
     );
   const where = NEW_IN[view];
@@ -405,21 +402,28 @@ export function TargetMenu({
   );
 }
 
-const COLLAPSED_KEY = "collapsed-areas";
+const COLLAPSED_KEY = "collapsed";
 const listeners = new Set<() => void>();
-let collapsedAreas = new Set<Id>(JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]") as Id[]);
+let collapsedIds = new Set<Id>(JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]") as Id[]);
 
-/** Which sidebar areas are collapsed, kept per Mac in localStorage. */
-export function useCollapsedAreas() {
+/** Which sidebar areas, parent tags and groups are collapsed, kept per Mac in localStorage. */
+export function useCollapsed() {
   const collapsed = useSyncExternalStore(
     (fn) => (listeners.add(fn), () => listeners.delete(fn)),
-    () => collapsedAreas,
+    () => collapsedIds,
   );
   const toggle = (id: Id) => {
-    collapsedAreas = new Set(collapsedAreas);
-    if (!collapsedAreas.delete(id)) collapsedAreas.add(id);
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsedAreas]));
+    collapsedIds = new Set(collapsedIds);
+    if (!collapsedIds.delete(id)) collapsedIds.add(id);
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsedIds]));
     for (const fn of listeners) fn();
   };
   return { collapsed, toggle };
+}
+
+/** Collapse or Expand, only when there is something underneath. */
+function CollapseItem({ id, nested }: { id: Id; nested: boolean }) {
+  const { collapsed, toggle } = useCollapsed();
+  if (!nested) return null;
+  return <Item onClick={() => toggle(id)}>{collapsed.has(id) ? "Expand" : "Collapse"}</Item>;
 }

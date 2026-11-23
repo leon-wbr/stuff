@@ -6,7 +6,6 @@ import {
   MagnifyingGlassIcon,
   MoonIcon,
   PlusIcon,
-  ShareIcon,
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { shortcutLabel } from "@stuff/core/keys";
@@ -38,7 +37,6 @@ import { dayLabel, monthLabel } from "./format.ts";
 import { ProgressRing, ViewIcon } from "./icons.tsx";
 import { TargetMenu, type Target } from "./menus.tsx";
 import { Row } from "./Row.tsx";
-import { sendToThings } from "./things.ts";
 import { usePanel } from "./ui.tsx";
 
 export const DRAG_TYPE = "application/x-stuff-ids";
@@ -199,7 +197,6 @@ function Header({ view, w, today }: { view: View; w: World; today: Day }) {
               <MenuItem onClick={() => change(add("heading", { title: "", project: id }))}>
                 Add heading
               </MenuItem>
-              <MenuItem onClick={() => sendToThings(w, [id])}>Send to Things</MenuItem>
               <MenuItem
                 onClick={() => {
                   change(trash([id]));
@@ -450,7 +447,6 @@ export function ListView() {
         view={view}
         onOpen={open}
         onRestore={() => change(trash(selection, false))}
-        w={w}
       />
     </div>
   );
@@ -463,7 +459,6 @@ function Toolbar(props: {
   view: View;
   onOpen: ReturnType<typeof usePanel>["open"];
   onRestore(): void;
-  w: World;
 }) {
   const { selection, view, onOpen } = props;
   const icon =
@@ -506,7 +501,7 @@ function Toolbar(props: {
       >
         <ArrowRightIcon className="size-[18px]" />
       </button>
-      {view === "trash" ? (
+      {view === "trash" && (
         <button
           type="button"
           className={icon}
@@ -516,17 +511,6 @@ function Toolbar(props: {
           onClick={props.onRestore}
         >
           <ArrowUUpLeftIcon className="size-[18px]" />
-        </button>
-      ) : (
-        <button
-          type="button"
-          className={icon}
-          aria-label="Send to Things"
-          title="Send to Things (⇧⌘S)"
-          disabled={!selection.length}
-          onClick={() => sendToThings(props.w, selection)}
-        >
-          <ShareIcon className="size-[18px]" />
         </button>
       )}
       <button

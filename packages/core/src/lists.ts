@@ -242,6 +242,14 @@ export function progress(w: World, projectId: Id) {
   return { done: todos.filter((t) => t.status !== "open").length, total: todos.length };
 }
 
+/** What the sidebar nests: open projects under an area (or loose with `null`). */
+export const areaProjects = (w: World, area: Id | null) =>
+  w.projects.filter((p) => p.area === area && p.status === "open" && !p.trashed);
+
+/** Tags under a parent tag (or the top level with `null`). */
+export const childTags = (w: World, parent: Id | null) =>
+  w.tags.filter((t) => t.parent === parent && !t.trashed);
+
 export function tagFamily(w: World, tagId: Id): Set<Id> {
   const family = new Set([tagId]);
   for (let grew = true; grew;) {
